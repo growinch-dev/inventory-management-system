@@ -1,0 +1,1972 @@
+================================================================================
+MAJOR SURGICAL INVENTORY & TENDER MANAGEMENT SYSTEM - PRODUCT DOCUMENTATION
+================================================================================
+
+Last Updated: 2026-08-14
+System Type: Multi-Tenant SaaS Application
+Tech Stack: React + Node.js + MongoDB
+
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+1. Authentication Pages
+   - Login
+   - Register
+
+2. Dashboard & Overview
+   - Dashboard
+   - Limit Enforcement Demo
+
+3. Product Management
+   - Products
+   - Product Form (Add/Edit)
+
+4. Sales & Billing
+   - Invoices
+   - Invoice Form
+   - Invoice Detail
+   - POS (Point of Sale)
+
+5. Inventory Management
+   - Warehouses
+   - Transfers
+   - Stock Movements
+   - Label Generator
+
+6. Procurement
+   - Purchase Orders
+   - Purchase Order Form
+   - Purchase Order Receive
+
+7. Relationships
+   - Customers
+   - Suppliers
+
+8. Tender Management
+   - Tenders
+   - Tender Form
+   - Tender Detail
+
+9. Demo & Delivery
+   - Demo Issues
+   - Demo Issue Form
+   - Demo Issue Detail
+   - Delivery Challans
+   - Delivery Challan Form
+   - Delivery Challan Detail
+
+10. Financial
+    - Payments
+    - Pricing
+    - Billing
+
+11. Settings & Configuration
+    - Settings
+    - Notifications
+    - Reports
+
+
+================================================================================
+1. AUTHENTICATION PAGES
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Login
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /login
+  - Direct access (public route)
+  - Redirect from protected routes when not authenticated
+
+Description:
+  A secure login page for existing users to access the system.
+
+Current Functionality:
+  - Email and password authentication
+  - "Remember me" functionality (via token persistence)
+  - Password visibility toggle
+  - Real-time form validation
+  - Error handling for invalid credentials
+  - Automatic redirect to dashboard after login
+  - JWT token-based authentication
+  - Multi-tenant login (same email can exist in different tenants)
+
+Future Enhancements:
+  - Two-factor authentication (2FA)
+  - "Forgot Password" flow with email reset link
+  - Social login (Google, Microsoft SSO)
+  - Account lockout after multiple failed attempts
+  - Login activity history
+  - Remember last logged-in organization
+  - Biometric authentication for mobile
+
+
+--------------------------------------------------------------------------------
+PAGE: Register
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /register
+  - Link from Login page ("Don't have an account?")
+  - Direct access (public route)
+
+Description:
+  New user registration page that creates both a company (tenant) and the
+  first admin user. This is the entry point for new organizations.
+
+Current Functionality:
+  - Full Name input
+  - Company Name input (creates new tenant)
+  - Email validation
+  - Password strength indicator (visual feedback)
+  - Password confirmation matching
+  - Real-time validation feedback
+  - Automatically creates tenant with free plan (10 products, 1 user, 50 invoices/month)
+  - Sets user as admin and owner
+  - Automatic login after registration
+  - Beautiful animated UI with progress indicators
+
+Future Enhancements:
+  - Email verification before account activation
+  - Phone number for SMS verification
+  - Company details (address, GST, industry type)
+  - Team size selection for plan recommendation
+  - Invite code/referral system
+  - Terms of Service and Privacy Policy acceptance checkboxes
+  - CAPTCHA for bot prevention
+  - Business type selection (wholesaler, retailer, distributor)
+  - Onboarding wizard after registration
+
+
+================================================================================
+2. DASHBOARD & OVERVIEW
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Dashboard
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: / (root/home)
+  - Sidebar: "Dashboard" (first item)
+  - Accessible immediately after login
+
+Description:
+  Main overview page showing key metrics, statistics, and quick actions for
+  the entire inventory and sales operation.
+
+Current Functionality:
+  - Total products count with trend
+  - Low stock alerts count
+  - Total invoices this month
+  - Monthly revenue with comparison to last month
+  - Recent invoices table (5 latest)
+  - Low stock products table (5 items)
+  - Top selling products chart
+  - Revenue trend chart (monthly)
+  - Quick action buttons (Add Product, Create Invoice, etc.)
+  - Real-time data updates
+  - Role-based visibility
+
+Future Enhancements:
+  - Customizable dashboard widgets (drag & drop)
+  - Date range selector for metrics
+  - Export dashboard as PDF report
+  - Profit margin analysis
+  - Inventory turnover ratio
+  - Outstanding payments summary
+  - Pending purchase orders count
+  - Warehouse-wise stock distribution map
+  - Sales by customer segment
+  - Expiring batch alerts
+  - Tender deadlines widget
+  - Top customers by revenue
+  - Product category performance
+  - Year-over-year comparison
+  - Predictive analytics (stock predictions, sales forecasts)
+  - Team performance metrics (for managers)
+  - Notifications center integration
+
+
+--------------------------------------------------------------------------------
+PAGE: Limit Enforcement Demo
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /limit-demo
+  - Direct URL access (for testing/demo purposes)
+  - Not in main navigation (development/demo page)
+
+Description:
+  Interactive demo page showcasing the subscription limit enforcement system.
+  Displays upgrade modals when users hit their plan limits.
+
+Current Functionality:
+  - Products limit demo (10/10 used)
+  - Users limit demo (1/1 used)
+  - Monthly invoices limit demo (50/50 used)
+  - Warehouses limit demo (1/1 used)
+  - Batch Tracking feature gate demo
+  - Advanced Reports feature gate demo
+  - Upgrade modal opens automatically on page load
+  - Side-by-side plan comparison (Starter vs Pro)
+  - Visual usage indicators
+  - Navigation to pricing page
+
+Future Enhancements:
+  - Remove from production build
+  - Admin-only access in production
+  - Add more feature gates demos
+  - API access demo
+  - Tender management feature demo
+  - Show actual user's current usage
+  - A/B testing for modal designs
+
+
+================================================================================
+3. PRODUCT MANAGEMENT
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Products
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /products
+  - Sidebar: "Products" under Inventory section
+  - Dashboard: Quick action button "View Products"
+
+Description:
+  Master list of all products/items in the inventory. Central hub for product
+  catalog management with search, filtering, and batch operations.
+
+Current Functionality:
+  - Paginated product list (20 per page)
+  - Search by name, SKU, brand, or model number
+  - Filter by category (Surgical, Orthopedic, Medical Devices, etc.)
+  - Low stock filter toggle
+  - View product details modal
+  - Add new product (with limit enforcement)
+  - Edit product
+  - Delete product (soft delete - marks as inactive)
+  - Generate QR/barcode labels
+  - Stock level indicators with color coding
+  - Product images display
+  - Category badges
+  - Action menu (view, edit, label, delete)
+  - Responsive table design
+  - Empty state with call-to-action
+
+Future Enhancements:
+  - Bulk import from CSV/Excel
+  - Bulk edit (update multiple products at once)
+  - Bulk delete
+  - Product variants (size, color, pack size)
+  - Product bundles/kits
+  - Multi-image support (gallery)
+  - Product comparison
+  - Favorite/starred products
+  - Recently viewed products
+  - Clone product functionality
+  - Advanced filters (price range, manufacturer, warehouse location)
+  - Sort by multiple columns
+  - Column visibility toggle
+  - Export to Excel/PDF
+  - Product tags/labels for custom categorization
+  - Barcode scanner integration
+  - Product templates for quick creation
+  - Batch number tracking (already modeled, needs UI)
+  - Expiry date tracking
+  - Minimum/maximum stock levels
+  - Reorder point automation
+  - Supplier linking
+  - Product history/audit log
+
+
+--------------------------------------------------------------------------------
+PAGE: Product Form (Add/Edit)
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /products/new (Add) or /products/:id/edit (Edit)
+  - From Products page: "Add Product" button or Edit action
+  - Dashboard: "Add Product" quick action
+
+Description:
+  Form for creating new products or editing existing ones. Comprehensive input
+  for all product details, pricing, and inventory information.
+
+Current Functionality:
+  - Product name, description
+  - SKU (auto-generated or manual)
+  - Category selection
+  - Brand name
+  - Model number
+  - Manufacturer details (name, country)
+  - HSN code for GST
+  - Unit of measurement (PCS, KG, L, etc.)
+  - Cost price and unit price
+  - Tax rate (default 18%)
+  - Initial quantity
+  - Reorder level
+  - Warehouse location (warehouse, zone, shelf, rack, bin)
+  - Product image upload
+  - Auto-generate QR code on save
+  - Form validation
+  - Save and continue editing
+  - Tenant isolation (multi-tenancy)
+  - Created by tracking
+  - Initial stock movement creation
+
+Future Enhancements:
+  - Multiple images with primary selection
+  - Image cropping/editing
+  - Product specifications (custom fields)
+  - Alternative SKUs/barcodes
+  - Volume pricing tiers
+  - Supplier selection and linking
+  - Purchase history display
+  - Sales history display
+  - Batch/lot number assignment
+  - Expiry date tracking
+  - Serial number tracking for high-value items
+  - Weight and dimensions
+  - Packaging information
+  - Customs/import details
+  - Product certifications (CE, FDA, ISO)
+  - Warranty information
+  - Product videos
+  - Related products suggestions
+  - Minimum order quantity
+  - Lead time information
+  - Dropshipping support
+  - Print product label directly from form
+
+
+================================================================================
+4. SALES & BILLING
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Invoices
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /invoices
+  - Sidebar: "Invoices" under Sales section
+  - Dashboard: "View Invoices" or "Create Invoice" button
+
+Description:
+  Complete invoice management system for tracking sales, deliveries, and
+  payments. Handles the entire order-to-cash cycle.
+
+Current Functionality:
+  - Paginated invoice list
+  - Invoice status badges (Draft, Confirmed, Dispatched, Delivered, Cancelled)
+  - Payment status indicators (Unpaid, Partial, Paid)
+  - Search by invoice number or customer
+  - Filter by status
+  - Create new invoice (with monthly limit enforcement)
+  - View invoice details
+  - Edit invoice (draft only)
+  - Delete invoice
+  - Duplicate invoice
+  - Status update workflow (Confirm → Dispatch → Deliver)
+  - Invoice number auto-generation (tenant-specific)
+  - Total amount calculation
+  - Due amount tracking
+  - Invoice date and due date
+  - Customer information display
+
+Future Enhancements:
+  - Print invoice as PDF (with company letterhead)
+  - Email invoice to customer
+  - WhatsApp invoice sharing
+  - Payment recording from invoice list
+  - Bulk invoice actions
+  - Recurring invoices (subscriptions)
+  - Invoice templates
+  - Credit notes/refunds
+  - Proforma invoices
+  - Tax invoice/retail invoice toggle
+  - Multi-currency support
+  - Discount management (percentage/fixed, per item/total)
+  - Shipping charges
+  - Terms and conditions customization
+  - Payment reminders automation
+  - Overdue invoice highlighting
+  - Invoice aging report
+  - Export invoices to accounting software
+  - E-way bill generation
+  - GST return filing integration
+  - Payment gateway integration (pay online link in invoice)
+  - Invoice approval workflow
+  - Custom invoice numbering format
+
+
+--------------------------------------------------------------------------------
+PAGE: Invoice Form
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /invoices/new or /invoices/:id/edit
+  - From Invoices page: "Create Invoice" button or Edit action
+  - From POS: "Create Detailed Invoice"
+
+Description:
+  Interactive form for creating and editing invoices. Supports line items,
+  automatic calculations, and inventory updates.
+
+Current Functionality:
+  - Customer selection/creation
+  - Invoice date and due date
+  - Line items with product selection
+  - Quantity input
+  - Unit price (pre-filled from product)
+  - Discount per item
+  - Tax calculation per item
+  - Total amount calculation
+  - Grand total with all taxes
+  - Payment terms
+  - Notes/special instructions
+  - Stock validation (checks if quantity available)
+  - Real-time calculations
+  - Add/remove line items dynamically
+  - Form validation
+  - Draft saving
+  - Auto-decrement stock on confirmation
+
+Future Enhancements:
+  - Product search with autocomplete
+  - Barcode scanning for product addition
+  - Batch/serial number selection
+  - Stock availability indicator per product
+  - Alternative product suggestions
+  - Delivery address (multiple addresses per customer)
+  - Shipping method selection
+  - Expected delivery date
+  - Sales representative assignment
+  - Commission calculation
+  - Attach files (PO, specifications, etc.)
+  - Invoice templates selection
+  - Round-off amount handling
+  - TCS/TDS calculation
+  - E-way bill details
+  - Vehicle number for transport
+  - LR number tracking
+  - Freight charges
+  - Loading/unloading charges
+  - Packaging charges
+  - Insurance
+  - Installment/EMI options
+  - Convert estimate/quote to invoice
+  - Apply coupons/promotions
+  - Loyalty points redemption
+
+
+--------------------------------------------------------------------------------
+PAGE: Invoice Detail
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /invoices/:id
+  - From Invoices page: Click on invoice row or "View" action
+  - From customer detail: Click on customer's invoice
+
+Description:
+  Detailed view of a single invoice with all information, actions, and history.
+  Complete invoice lifecycle management.
+
+Current Functionality:
+  - Invoice header (number, dates, customer, status)
+  - Line items table with all details
+  - Amounts breakdown (subtotal, tax, total)
+  - Payment information
+  - Status badge
+  - Print button
+  - Edit button (for drafts)
+  - Status update actions (Confirm, Dispatch, Deliver)
+  - Cancel invoice
+  - Duplicate invoice
+  - Back to list navigation
+
+Future Enhancements:
+  - Payment history timeline
+  - Record payment directly
+  - Delivery tracking
+  - Customer communication log
+  - Related documents (delivery challan, e-way bill)
+  - Stock movement history related to this invoice
+  - Email invoice button
+  - WhatsApp share button
+  - Download PDF
+  - Print packing slip
+  - Return/refund interface
+  - Add payment reminder
+  - View customer's purchase history
+  - Suggest related products
+  - Invoice modification history/audit trail
+  - Attach proof of delivery
+  - Customer signature capture
+  - Route optimization for delivery
+  - Driver assignment
+  - Real-time delivery status
+  - Customer rating/feedback
+
+
+--------------------------------------------------------------------------------
+PAGE: POS (Point of Sale)
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /pos
+  - Sidebar: "POS" under Sales section
+  - Quick access for counter sales
+
+Description:
+  Quick billing interface for retail/counter sales. Optimized for fast
+  transactions with minimal clicks.
+
+Current Functionality:
+  - Product search and quick add
+  - Barcode scanner integration
+  - Shopping cart with line items
+  - Quantity adjustment
+  - Remove items
+  - Total calculation
+  - Customer selection (optional)
+  - Payment method selection
+  - Print receipt
+  - Complete sale
+
+Future Enhancements:
+  - Cash drawer integration
+  - Split payment (cash + card)
+  - Quick product favorites grid
+  - Discounts and offers application
+  - Hold/park sale (for later completion)
+  - Recall parked sales
+  - Customer display (secondary screen)
+  - Loyalty card scanning
+  - Points redemption
+  - Return/exchange interface
+  - Cash in/out tracking
+  - Shift management
+  - Day-end report
+  - Receipt printer integration
+  - Weighing scale integration
+  - Touch-optimized interface
+  - Offline mode
+  - Multiple payment terminals
+  - Gift card support
+  - Tip handling
+  - Table management (for restaurants)
+  - Kitchen order ticket (KOT)
+
+
+================================================================================
+5. INVENTORY MANAGEMENT
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Warehouses
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /warehouses
+  - Sidebar: "Warehouses" under Inventory section
+
+Description:
+  Manage multiple warehouse/godown locations. Track stock across different
+  physical locations for better inventory control.
+
+Current Functionality:
+  - List all warehouses
+  - Warehouse code and name
+  - Address and contact details
+  - Default warehouse indicator
+  - Create new warehouse (with feature gate & limit enforcement)
+  - Edit warehouse
+  - Delete warehouse
+  - View warehouse stats
+  - Multi-warehouse support (Pro plan feature)
+
+Future Enhancements:
+  - Warehouse-wise stock report
+  - Warehouse capacity management
+  - Zone/section mapping
+  - Bin/rack/shelf hierarchy
+  - Warehouse map visualization
+  - Stock transfer between warehouses
+  - Warehouse performance metrics
+  - Temperature-controlled zones
+  - Security access levels
+  - Warehouse staff assignment
+  - Receiving dock management
+  - Shipping dock management
+  - Putaway rules (where to store new stock)
+  - Pick path optimization
+  - Cycle counting schedules
+  - ABC analysis by warehouse
+  - Dead stock identification
+  - Warehouse utilization report
+  - Integration with WMS (Warehouse Management System)
+
+
+--------------------------------------------------------------------------------
+PAGE: Transfers
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /transfers
+  - Sidebar: "Transfers" under Inventory section
+
+Description:
+  Manage stock transfers between warehouses. Track inter-warehouse movements
+  for multi-location businesses.
+
+Current Functionality:
+  - List all transfers
+  - Transfer status (Pending, In Transit, Completed, Cancelled)
+  - Source and destination warehouse
+  - Transfer date
+  - Items and quantities
+  - Create new transfer
+  - Update transfer status
+  - View transfer details
+
+Future Enhancements:
+  - Transfer approval workflow
+  - Transfer request vs. transfer order
+  - In-transit tracking
+  - Driver/vehicle assignment
+  - GPS tracking integration
+  - Transfer cost tracking
+  - Bulk transfers
+  - Scheduled/recurring transfers
+  - Transfer templates
+  - Print transfer note
+  - Barcode scanning for verification
+  - Damage/loss reporting during transfer
+  - Transfer analytics
+  - Route optimization
+  - Transfer history per product
+  - Photo evidence of transfer
+  - Digital signature on receipt
+  - Integration with logistics partners
+
+
+--------------------------------------------------------------------------------
+PAGE: Stock Movements
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /movements
+  - Sidebar: "Stock Movements" under Inventory section
+  - Also called "Audit Trail"
+
+Description:
+  Complete audit trail of all stock movements. Track every change in inventory
+  levels with reasons and responsible persons.
+
+Current Functionality:
+  - List all stock movements
+  - Movement type (In, Out, Adjustment, Transfer, Return)
+  - Product information
+  - Quantity change (previous → new)
+  - Warehouse location
+  - Reason/reference
+  - Performed by (user)
+  - Timestamp
+  - Search and filter by product, type, date range
+  - Pagination
+
+Future Enhancements:
+  - Export to Excel/PDF
+  - Filter by warehouse
+  - Filter by user
+  - Filter by reference (invoice, PO, transfer)
+  - Stock movement analytics
+  - Movement velocity (fast/slow moving items)
+  - Discrepancy reporting
+  - Bulk adjustment interface
+  - Physical count recording
+  - Variance analysis
+  - Shrinkage tracking
+  - Damaged goods tracking
+  - Write-off management
+  - Movement approval for adjustments
+  - Attach photos/documents
+  - Batch/lot movement tracking
+  - Serial number movement tracking
+  - Real-time movement notifications
+  - Integration with barcode scanners
+  - Automatic movement recording from invoices/POs
+
+
+--------------------------------------------------------------------------------
+PAGE: Label Generator
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /labels
+  - Sidebar: "Labels" under Inventory section
+  - From Products: "Generate Label" action
+
+Description:
+  Generate and print QR codes and barcodes for products. Essential for
+  warehouse operations and quick stock management.
+
+Current Functionality:
+  - Select product(s) for label generation
+  - QR code generation with product data
+  - Barcode generation (Code128)
+  - Preview labels
+  - Print labels
+  - Label size selection
+  - Bulk label printing
+
+Future Enhancements:
+  - Multiple label formats (shelf labels, bin labels, carton labels)
+  - Custom label templates
+  - Logo on labels
+  - Price labels with MRP
+  - Promotional labels
+  - Expiry date on labels
+  - Batch number on labels
+  - Rack/bin location labels
+  - Pallet labels
+  - RFID tag support
+  - Label design editor
+  - Label printer integration (Zebra, Brother, DYMO)
+  - Label quantity per product
+  - Print queue management
+  - Reprint history
+  - Label approval before printing
+  - Compliance labels (CE, FDA marks)
+
+
+================================================================================
+6. PROCUREMENT
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Purchase Orders
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /purchase-orders
+  - Sidebar: "Purchase Orders" under Procurement section
+
+Description:
+  Manage purchase orders to suppliers. Track order lifecycle from creation
+  to receiving and payment.
+
+Current Functionality:
+  - List all purchase orders
+  - PO status (Draft, Sent, Partial, Received, Cancelled)
+  - PO number auto-generation
+  - Supplier information
+  - Order date and expected delivery date
+  - Total amount
+  - Received quantity tracking
+  - Create new PO
+  - Edit PO
+  - Delete PO
+  - Receive items
+
+Future Enhancements:
+  - PO approval workflow
+  - Send PO to supplier via email
+  - Supplier confirmation tracking
+  - Partial receiving
+  - Quality check interface
+  - Rejected items handling
+  - PO vs. GRN (Goods Receipt Note) matching
+  - Three-way matching (PO-GRN-Invoice)
+  - Price comparison with last purchase
+  - Supplier performance tracking
+  - Lead time tracking
+  - Automatic reorder based on stock levels
+  - Purchase requisition to PO conversion
+  - Blanket POs
+  - Drop-ship POs
+  - Import purchase tracking
+  - Customs clearance tracking
+  - Payment terms tracking
+  - PO amendments/revisions
+  - PO templates
+  - Supplier catalog integration
+  - Price negotiation history
+  - Purchase analytics
+
+
+--------------------------------------------------------------------------------
+PAGE: Purchase Order Form
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /purchase-orders/new or /purchase-orders/:id/edit
+  - From Purchase Orders: "Create PO" or Edit action
+
+Description:
+  Form to create and edit purchase orders. Similar to invoice form but for
+  incoming stock from suppliers.
+
+Current Functionality:
+  - Supplier selection
+  - PO date
+  - Expected delivery date
+  - Line items with product selection
+  - Quantity
+  - Unit price
+  - Tax calculation
+  - Total amount
+  - Terms and conditions
+  - Notes
+  - Save as draft or send to supplier
+
+Future Enhancements:
+  - Copy from previous PO
+  - Suggested reorder quantities based on stock levels
+  - Supplier's last price indicator
+  - Price comparison across suppliers
+  - Delivery location selection
+  - Freight terms (FOB, CIF, etc.)
+  - Payment terms selection
+  - Shipping method
+  - Attach RFQ (Request for Quote)
+  - Attach quote from supplier
+  - Expected gross profit calculation
+  - Budget check integration
+  - Approval routing
+  - Alternative suppliers suggestion
+  - Bulk import line items
+  - Product catalog from supplier
+
+
+--------------------------------------------------------------------------------
+PAGE: Purchase Order Receive
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /purchase-orders/:id/receive
+  - From Purchase Orders: "Receive" action
+
+Description:
+  Interface for receiving stock against a purchase order. Update inventory
+  when goods arrive at warehouse.
+
+Current Functionality:
+  - Display PO details
+  - Show ordered vs. received quantities
+  - Receive full or partial quantities
+  - Select warehouse for receiving
+  - Update stock automatically
+  - Mark PO as fully/partially received
+  - Create stock movement records
+
+Future Enhancements:
+  - Quality inspection checklist
+  - Accept/reject items
+  - Damaged items tracking
+  - Excess quantity handling
+  - Shortage reporting
+  - Batch number assignment during receiving
+  - Expiry date entry
+  - Serial number entry for serialized items
+  - Barcode scanning for verification
+  - Photo documentation
+  - Packing list verification
+  - Container/carton tracking
+  - Put-away location assignment
+  - Generate GRN (Goods Receipt Note)
+  - Print receiving report
+  - Supplier delivery note reference
+  - Vehicle/driver details
+  - Temperature records (for sensitive items)
+  - Weight verification
+  - Automatic invoice matching
+  - Discrepancy resolution workflow
+
+
+================================================================================
+7. RELATIONSHIPS
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Customers
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /customers
+  - Sidebar: "Customers" under Relationships section
+
+Description:
+  Customer database and relationship management. Track all customer information,
+  purchase history, and outstanding payments.
+
+Current Functionality:
+  - List all customers
+  - Customer name and contact details
+  - Email and phone
+  - Address
+  - GST number
+  - Credit limit
+  - Outstanding balance
+  - Add new customer (with limit enforcement)
+  - Edit customer
+  - Delete customer
+  - Search customers
+  - Customer creation limit (free: 50, starter: 200, pro: unlimited)
+
+Future Enhancements:
+  - Customer groups/categories
+  - Credit period setting
+  - Price list assignment per customer
+  - Customer portal access
+  - Purchase history view
+  - Outstanding invoices view
+  - Payment history
+  - Customer statements
+  - Credit limit alerts
+  - Customer aging report
+  - Top customers by revenue
+  - Customer activity timeline
+  - Customer notes/comments
+  - Attach documents (agreements, licenses)
+  - Customer rating/classification (A, B, C)
+  - Sales representative assignment
+  - Customer profitability analysis
+  - Marketing preferences
+  - Email marketing integration
+  - Birthday/anniversary reminders
+  - Loyalty program integration
+  - Customer feedback collection
+  - Support ticket integration
+  - Delivery preferences
+  - Multiple contacts per customer
+  - Multiple delivery addresses
+  - Tax exemption certificates
+  - Import customers from CSV
+  - Duplicate customer detection
+
+
+--------------------------------------------------------------------------------
+PAGE: Suppliers
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /suppliers
+  - Sidebar: "Suppliers" under Relationships section
+
+Description:
+  Supplier/vendor database. Manage supplier information, track purchases,
+  and monitor payment obligations.
+
+Current Functionality:
+  - List all suppliers
+  - Supplier name and contact details
+  - Email and phone
+  - Address
+  - GST number
+  - Payment terms
+  - Add new supplier (with limit enforcement)
+  - Edit supplier
+  - Delete supplier
+  - Search suppliers
+  - Supplier creation limit (free: 50, starter: 200, pro: unlimited)
+
+Future Enhancements:
+  - Supplier categories
+  - Products supplied listing
+  - Purchase history view
+  - Outstanding purchase orders
+  - Payment history
+  - Supplier statements
+  - Supplier rating/evaluation
+  - Delivery performance tracking
+  - Quality rating
+  - Price competitiveness analysis
+  - Supplier comparison
+  - Preferred supplier marking
+  - Supplier catalog integration
+  - Contract management
+  - Renewal date reminders
+  - Supplier audit checklist
+  - Compliance documents (licenses, certifications)
+  - Bank details for payment
+  - TDS tracking
+  - Multiple contacts per supplier
+  - Supplier portal access
+  - RFQ (Request for Quote) management
+  - Price negotiation history
+  - Volume discount tiers
+  - Minimum order quantities
+  - Lead time by product
+  - Supplier performance scorecard
+  - Import suppliers from CSV
+  - Supplier onboarding workflow
+
+
+================================================================================
+8. TENDER MANAGEMENT
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Tenders
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /tenders
+  - Sidebar: "Tenders" under Tender Management section
+  - Feature gated (Pro/Enterprise plans only)
+
+Description:
+  Government and institutional tender management. Track tender lifecycle from
+  submission to supply completion and payment receipt.
+
+Current Functionality:
+  - List all tenders
+  - Tender number and title
+  - Organization/department name
+  - Tender status (Applied, Won, Lost, Supplying, Completed)
+  - EMD (Earnest Money Deposit) tracking
+  - Security deposit tracking
+  - Supply orders tracking
+  - Payment tracking
+  - Create new tender
+  - Edit tender
+  - Delete tender
+  - Update tender status
+  - Feature gate enforcement (requires Pro plan)
+
+Future Enhancements:
+  - Tender application deadline alerts
+  - Document checklist
+  - Tender documents upload/download
+  - Technical bid vs. commercial bid
+  - Bid submission tracking
+  - Tender opening date/time
+  - Result declaration tracking
+  - Award letter upload
+  - Supply schedule management
+  - Inspection requirements
+  - Performance bank guarantee tracking
+  - Penalty/liquidated damages calculation
+  - Extension tracking
+  - Amendment tracking
+  - Tender renewal tracking
+  - Profit margin analysis
+  - Tender vs. actual supply comparison
+  - Compliance checklist
+  - Multiple departments per tender
+  - Consortium/partnership management
+  - Tender calendar view
+  - Tender analytics (win rate, revenue)
+  - Tender templates
+  - Alerts for expiring documents
+  - Integration with government portals (GeM, e-procurement)
+
+
+--------------------------------------------------------------------------------
+PAGE: Tender Form
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /tenders/new or /tenders/:id/edit
+  - From Tenders: "Add Tender" or Edit action
+
+Description:
+  Comprehensive form for creating and managing tender information.
+
+Current Functionality:
+  - Tender number
+  - Title/description
+  - Organization name
+  - Department
+  - Tender value
+  - Application date
+  - Opening date
+  - Validity period
+  - EMD amount and details
+  - Security deposit amount
+  - Status
+  - Notes
+  - Save and update
+
+Future Enhancements:
+  - Tender category
+  - Tender type (open, limited, single)
+  - Multiple items/lots
+  - Quantity requirements
+  - Delivery timeline
+  - Inspection terms
+  - Payment terms
+  - Warranty requirements
+  - Technical specifications upload
+  - Financial bid details
+  - Bid bond details
+  - Performance guarantee details
+  - Clauses and conditions
+  - Key dates calendar
+  - Attach tender documents
+  - Team members assignment
+  - Budget vs. bid comparison
+  - Risk assessment
+  - Competitor tracking
+  - Historical tender reference
+  - Auto-populate from similar tenders
+
+
+--------------------------------------------------------------------------------
+PAGE: Tender Detail
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /tenders/:id
+  - From Tenders: Click on tender or "View" action
+
+Description:
+  Detailed view of a single tender with all lifecycle information, documents,
+  and financial tracking.
+
+Current Functionality:
+  - Tender header information
+  - Current status
+  - EMD details and status
+  - Security deposit details
+  - Supply orders list
+  - Payment history
+  - Update status action
+  - Edit tender
+  - Back to list
+
+Future Enhancements:
+  - Timeline view of tender progress
+  - Document repository
+  - Communication log
+  - Meeting notes
+  - Inspection reports
+  - Supply progress tracking
+  - Invoice matching
+  - Outstanding deliveries
+  - Outstanding payments
+  - Penalty calculations
+  - Extension requests
+  - Claims and disputes
+  - Renewal tracking
+  - Related tenders
+  - Profit/loss analysis
+  - Export tender report
+  - Print tender summary
+  - Share tender details with team
+  - Notifications and reminders
+  - Audit trail
+
+
+================================================================================
+9. DEMO & DELIVERY
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Demo Issues
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /demo-issues
+  - Sidebar: "Demo Issues" under Demo & Delivery section
+
+Description:
+  Track demo units issued to potential customers for evaluation. Manage
+  expensive medical equipment demos and ensure timely return.
+
+Current Functionality:
+  - List all demo issues
+  - Demo number
+  - Customer information
+  - Products issued
+  - Issue date
+  - Expected return date
+  - Status (Issued, Returned, Converted to Sale, Overdue)
+  - Create demo issue
+  - Update status
+  - Record return
+
+Future Enhancements:
+  - Demo agreement document
+  - Demo product tracking (serial numbers)
+  - Condition assessment on issue
+  - Condition assessment on return
+  - Damage/loss tracking
+  - Deposit collection
+  - Deposit refund tracking
+  - Demo cost tracking
+  - Conversion rate tracking
+  - Overdue alerts
+  - Auto-reminder emails
+  - Demo extension requests
+  - Demo to sale conversion workflow
+  - Demo product maintenance log
+  - Demo availability calendar
+  - Demo booking system
+  - Customer feedback collection
+  - Photo documentation
+  - Demo ROI analysis
+  - Integration with CRM
+
+
+--------------------------------------------------------------------------------
+PAGE: Demo Issue Form
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /demo-issues/new or /demo-issues/:id/edit
+  - From Demo Issues: "Add Demo Issue" or Edit action
+
+Description:
+  Form to create and edit demo issue records.
+
+Current Functionality:
+  - Customer selection
+  - Issue date
+  - Expected return date
+  - Products selection with quantities
+  - Serial numbers
+  - Deposit amount
+  - Terms and conditions
+  - Notes
+  - Status
+
+Future Enhancements:
+  - Demo agreement template
+  - Digital signature
+  - Photo upload of equipment
+  - Accessories checklist
+  - Insurance details
+  - Delivery person assignment
+  - Installation requirements
+  - Training provided
+  - Support contact
+  - Terms acceptance
+  - Credit check integration
+  - Approval workflow
+  - Demo cost calculation
+
+
+--------------------------------------------------------------------------------
+PAGE: Demo Issue Detail
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /demo-issues/:id
+  - From Demo Issues: View action
+
+Description:
+  Detailed view of demo issue with timeline, product details, and actions.
+
+Current Functionality:
+  - Demo header information
+  - Customer details
+  - Products list
+  - Issue and return dates
+  - Status
+  - Notes
+  - Update status
+  - Edit demo issue
+
+Future Enhancements:
+  - Demo timeline
+  - Communication history
+  - Photos (before/after)
+  - Condition reports
+  - Customer feedback
+  - Follow-up tasks
+  - Conversion probability
+  - Sales rep notes
+  - Return checklist
+  - Damage assessment
+  - Repair costs
+  - Print demo agreement
+  - Send reminder to customer
+  - Convert to sale action
+
+
+--------------------------------------------------------------------------------
+PAGE: Delivery Challans
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /delivery-challans
+  - Sidebar: "Delivery Challans" under Demo & Delivery section
+
+Description:
+  Manage delivery challans (DC) for goods sent without invoice. Common for
+  job work, returnable containers, samples, etc.
+
+Current Functionality:
+  - List all delivery challans
+  - DC number
+  - Customer information
+  - Issue date
+  - Status (Issued, Returned, Invoiced)
+  - Products and quantities
+  - Create delivery challan
+  - Update status
+
+Future Enhancements:
+  - DC to invoice conversion
+  - Return tracking
+  - Purpose of sending (job work, sample, replacement, etc.)
+  - Transport details
+  - Vehicle number
+  - LR number
+  - E-way bill integration
+  - Print DC
+  - Customer acknowledgement
+  - Pending DC report
+  - DC aging
+  - Auto-reminder for returns
+  - Partial return handling
+  - Barcode scanning on return
+  - Condition check on return
+  - DC analytics
+
+
+--------------------------------------------------------------------------------
+PAGE: Delivery Challan Form
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /delivery-challans/new or /delivery-challans/:id/edit
+  - From Delivery Challans: "Add DC" or Edit action
+
+Description:
+  Form to create and edit delivery challans.
+
+Current Functionality:
+  - Customer selection
+  - DC date
+  - Products and quantities
+  - Purpose
+  - Expected return date
+  - Notes
+  - Status
+
+Future Enhancements:
+  - Reference invoice/order
+  - Transport mode
+  - Vehicle details
+  - Driver details
+  - Delivery address
+  - Contact person
+  - Delivery instructions
+  - Packaging details
+  - Weight/volume
+  - Value for transport
+  - E-way bill number
+  - Terms and conditions
+  - Digital signature
+  - Photo attachment
+
+
+--------------------------------------------------------------------------------
+PAGE: Delivery Challan Detail
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /delivery-challans/:id
+  - From Delivery Challans: View action
+
+Description:
+  Detailed view of delivery challan.
+
+Current Functionality:
+  - DC information
+  - Customer details
+  - Products list
+  - Status
+  - Edit DC
+
+Future Enhancements:
+  - Delivery timeline
+  - Transport tracking
+  - Proof of delivery
+  - Customer signature
+  - Photos
+  - Return details
+  - Conversion to invoice
+  - Print DC
+  - Send to customer
+  - Related documents
+
+
+================================================================================
+10. FINANCIAL
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Payments
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /payments
+  - Sidebar: "Payments" under Financial section
+
+Description:
+  Track all payment transactions - both receivables (from customers) and
+  payables (to suppliers).
+
+Current Functionality:
+  - List all payments
+  - Payment type (Received/Paid)
+  - Party (customer/supplier)
+  - Amount
+  - Payment method (Cash, Bank Transfer, Cheque, UPI, Card)
+  - Payment date
+  - Reference invoice/PO
+  - Status (Pending, Cleared, Bounced)
+  - Create payment record
+
+Future Enhancements:
+  - Payment matching to invoices
+  - Outstanding invoices display
+  - Partial payment allocation
+  - Advance payment handling
+  - Cheque bounce handling
+  - Bank reconciliation
+  - Payment reminders
+  - Payment terms tracking
+  - Overdue tracking
+  - Interest calculation on overdue
+  - Payment plans/installments
+  - Auto-payment recording from bank feeds
+  - Payment gateway integration
+  - Online payment links
+  - Payment receipts generation
+  - Customer statements
+  - Supplier statements
+  - Cashflow forecasting
+  - Payment analytics
+  - Early payment discounts
+  - Late payment penalties
+  - Multi-currency payments
+  - Foreign exchange gain/loss
+  - TDS calculation and tracking
+  - Payment approval workflow
+  - Bulk payment processing
+  - Export to accounting software
+
+
+--------------------------------------------------------------------------------
+PAGE: Pricing
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /pricing
+  - Public page (also accessible when logged in)
+  - From upgrade modals: "View Plans" button
+  - From billing page: "Change Plan" button
+
+Description:
+  Subscription plan selection page. Display all available plans with features
+  and pricing for users to upgrade their subscription.
+
+Current Functionality:
+  - Display all plans (Free, Starter, Pro, Enterprise)
+  - Monthly/yearly toggle (17% discount on yearly)
+  - Feature comparison matrix
+  - Limits display (products, users, invoices, warehouses)
+  - Popular plan badge (Pro)
+  - Razorpay integration for payment
+  - Current plan indicator
+  - Subscribe/upgrade buttons
+  - Responsive design
+
+Future Enhancements:
+  - FAQ section
+  - Testimonials
+  - Plan comparison tool
+  - ROI calculator
+  - Free trial period
+  - Custom enterprise pricing form
+  - Chat with sales
+  - Plan recommendation based on usage
+  - Discount codes/coupons
+  - Seasonal offers
+  - Referral program
+  - Annual payment discount
+  - Add-ons (extra users, storage, etc.)
+  - Contact sales form
+  - Live chat support
+  - Video demos
+  - Feature deep-dive pages
+  - Industry-specific pricing
+  - Non-profit discounts
+  - Student discounts
+
+
+--------------------------------------------------------------------------------
+PAGE: Billing
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /billing or /settings/billing
+  - Sidebar: "Billing" under Financial section
+  - From upgrade modals: Click close and then access from menu
+  - User menu: "Billing & Subscription"
+
+Description:
+  Subscription management dashboard. View current plan, usage, payment history,
+  and manage billing settings.
+
+Current Functionality:
+  - Current plan display with status badge
+  - Plan limits display
+  - Current usage with progress bars
+    - Products count / limit
+    - Users count / limit
+    - Invoices this month / limit
+    - Warehouses count / limit
+  - Feature availability grid
+  - Payment history table (last 10 transactions)
+  - Cancel subscription button
+  - Change plan button (navigates to pricing)
+
+Future Enhancements:
+  - Usage analytics chart (monthly trends)
+  - Billing cycle information
+  - Next billing date
+  - Payment method on file
+  - Update payment method
+  - Download invoices/receipts
+  - Billing address management
+  - GST details for Indian customers
+  - Usage alerts setup
+  - Auto-upgrade when limit reached
+  - Downgrade prevention (if usage exceeds lower plan)
+  - Proration calculation on plan change
+  - Refund requests
+  - Pause subscription
+  - Reactivate cancelled subscription
+  - Add-ons management
+  - Coupon code application
+  - Referral credits
+  - Annual vs monthly savings calculator
+  - Export billing history
+  - Tax invoice downloads
+  - Automatic payment retry settings
+  - Failed payment handling
+  - Billing notifications preferences
+  - Team member access to billing
+  - Budget alerts
+  - Spending insights
+
+
+================================================================================
+11. SETTINGS & CONFIGURATION
+================================================================================
+
+--------------------------------------------------------------------------------
+PAGE: Settings
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /settings
+  - Sidebar: "Settings" (gear icon)
+  - User menu: "Settings"
+
+Description:
+  Application configuration and user preferences. Customize system behavior,
+  company details, and personal settings.
+
+Current Functionality:
+  - Company information
+  - User profile settings
+  - Change password
+  - Language selection (English/Hindi)
+  - Notification preferences
+  - Basic settings
+
+Future Enhancements:
+  - Company logo upload
+  - Invoice template customization
+  - Email templates
+  - SMS templates
+  - Tax settings (GST rates, TCS, TDS)
+  - Number series customization (invoice #, PO #, etc.)
+  - Default warehouse
+  - Default payment terms
+  - Default tax rate
+  - Currency settings
+  - Date format
+  - Time zone
+  - Decimal places
+  - Rounding rules
+  - Fiscal year settings
+  - User management
+    - Add/remove users
+    - Role assignment
+    - Permission management
+  - API keys management
+  - Webhooks configuration
+  - Integration settings
+    - Accounting software
+    - Payment gateways
+    - Shipping partners
+    - Email service
+    - SMS service
+  - Backup settings
+  - Data export
+  - Data import
+  - Audit log access
+  - Security settings
+    - Two-factor authentication
+    - Session timeout
+    - IP whitelist
+    - Password policy
+  - Custom fields
+  - Workflow automation
+  - Email server settings
+  - Print settings
+  - Barcode format
+  - Units of measurement
+  - Product categories
+  - Customer groups
+  - Supplier categories
+  - Payment methods
+  - Warehouses configuration
+  - Tax exemption settings
+
+
+--------------------------------------------------------------------------------
+PAGE: Notifications
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /notifications
+  - Header: Bell icon (with badge showing unread count)
+  - Sidebar: "Notifications"
+
+Description:
+  Central notification center for all system alerts, updates, and important
+  events requiring user attention.
+
+Current Functionality:
+  - List all notifications
+  - Unread count badge
+  - Notification types (info, warning, error, success)
+  - Notification message
+  - Timestamp
+  - Mark as read
+  - Mark all as read
+  - Real-time updates
+
+Future Enhancements:
+  - Notification categories
+    - Stock alerts
+    - Payment reminders
+    - Order updates
+    - System updates
+    - User activities
+  - Filter by category
+  - Filter by read/unread
+  - Search notifications
+  - Notification settings/preferences
+  - Email notification toggle
+  - SMS notification toggle
+  - Push notification toggle
+  - Notification frequency (real-time, daily digest, weekly)
+  - Mute specific notification types
+  - Notification sound
+  - Desktop notifications
+  - Mobile push notifications
+  - Notification history
+  - Delete notifications
+  - Snooze notifications
+  - Notification actions (direct action from notification)
+  - Notification templates
+  - Custom notification rules
+  - Escalation rules
+  - Team notifications
+  - @mentions
+  - Notification analytics
+
+
+--------------------------------------------------------------------------------
+PAGE: Reports
+--------------------------------------------------------------------------------
+Navigation:
+  - URL: /reports
+  - Sidebar: "Reports" under Analytics section
+
+Description:
+  Comprehensive reporting module for business intelligence and analytics.
+  Generate various reports for different aspects of the business.
+
+Current Functionality:
+  - Sales reports
+  - Stock reports
+  - Purchase reports
+  - Payment reports
+  - Basic filters (date range)
+  - Export to Excel/PDF
+
+Future Enhancements:
+  - Sales Reports:
+    - Sales by customer
+    - Sales by product
+    - Sales by category
+    - Sales by salesperson
+    - Sales trends
+    - Sales forecast
+    - Sales commission
+    - Sales comparison (period over period)
+
+  - Stock Reports:
+    - Stock summary
+    - Stock valuation
+    - Stock movement report
+    - Dead stock report
+    - Fast/slow moving items
+    - Stock aging
+    - Reorder report
+    - Stock shortage report
+    - Stock by warehouse
+    - ABC analysis
+
+  - Purchase Reports:
+    - Purchase by supplier
+    - Purchase by product
+    - Purchase trends
+    - Purchase price comparison
+    - Supplier performance
+
+  - Financial Reports:
+    - Profit & loss
+    - Balance sheet
+    - Cash flow
+    - Receivables aging
+    - Payables aging
+    - Outstanding report
+    - Payment collection report
+    - GST reports
+      - GSTR-1
+      - GSTR-3B
+      - HSN summary
+
+  - Customer Reports:
+    - Customer list
+    - Customer ledger
+    - Customer wise sales
+    - Customer profitability
+    - Customer retention
+
+  - Product Reports:
+    - Product performance
+    - Product profitability
+    - Product comparison
+    - Batch expiry report
+
+  - Custom Reports:
+    - Report builder
+    - Saved reports
+    - Scheduled reports
+    - Report sharing
+
+  - Dashboard Widgets:
+    - Customizable KPIs
+    - Charts and graphs
+    - Drill-down capability
+
+  - Advanced Features:
+    - Multi-dimensional analysis
+    - Pivot tables
+    - Report subscriptions
+    - Automated report generation
+    - Report scheduling
+    - Email reports
+    - API access to reports
+    - Mobile-optimized reports
+    - Real-time reports
+    - Comparison tools
+    - Benchmarking
+
+
+================================================================================
+ADDITIONAL FEATURES TO CONSIDER
+================================================================================
+
+1. User Management & Team Collaboration
+   - Team member invitations
+   - Role-based access control
+   - Activity feed
+   - Comments and mentions
+   - Task assignment
+   - Team chat/messaging
+
+2. Mobile Application
+   - iOS and Android apps
+   - Barcode scanning
+   - Offline mode
+   - Push notifications
+   - Mobile-optimized UI
+   - Photo capture for documentation
+
+3. API & Integrations
+   - RESTful API
+   - Webhooks
+   - Zapier integration
+   - Accounting software (Tally, QuickBooks)
+   - E-commerce platforms (Shopify, WooCommerce)
+   - Payment gateways (Razorpay, PayU, Paytm)
+   - Shipping partners (Delhivery, Blue Dart)
+   - Email marketing (Mailchimp)
+   - SMS gateways
+
+4. Advanced Analytics
+   - Predictive analytics
+   - Machine learning for demand forecasting
+   - Anomaly detection
+   - Business intelligence dashboard
+   - Custom KPIs
+   - Goal tracking
+
+5. Automation
+   - Workflow automation
+   - Auto-reordering
+   - Scheduled reports
+   - Email automation
+   - Alert rules engine
+   - Approval workflows
+
+6. Compliance & Security
+   - Data encryption
+   - Regular backups
+   - Disaster recovery
+   - Audit trails
+   - GDPR compliance
+   - SOC 2 compliance
+   - Role-based permissions
+   - IP restrictions
+   - Session management
+
+7. Customer Portal
+   - Order tracking
+   - Invoice viewing
+   - Payment portal
+   - Support tickets
+   - Product catalog
+   - Quote requests
+   - Account statements
+
+8. Supplier Portal
+   - PO visibility
+   - ASN (Advance Shipping Notice)
+   - Invoice submission
+   - Payment status
+   - Performance dashboard
+
+9. E-commerce Integration
+   - Online store
+   - B2B marketplace
+   - Shopping cart
+   - Payment gateway
+   - Order management
+   - Real-time inventory sync
+
+10. Multi-location Features
+    - Branch management
+    - Inter-branch transfers
+    - Consolidated reports
+    - Central purchasing
+    - Branch-wise profitability
+
+
+================================================================================
+SUBSCRIPTION PLAN FEATURE MATRIX
+================================================================================
+
+Feature                          | Free  | Starter | Pro      | Enterprise
+---------------------------------|-------|---------|----------|------------
+Max Products                     | 10    | 100     | 1,000    | Unlimited
+Max Users                        | 1     | 3       | 10       | Unlimited
+Max Invoices/Month               | 50    | 100     | Unlimited| Unlimited
+Max Warehouses                   | 1     | 3       | 10       | Unlimited
+Max Customers                    | 50    | 200     | Unlimited| Unlimited
+Max Suppliers                    | 50    | 200     | Unlimited| Unlimited
+
+Multi-Warehouse Support          | ✗     | ✓       | ✓        | ✓
+Batch Tracking                   | ✗     | ✓       | ✓        | ✓
+Advanced Reports                 | ✗     | ✓       | ✓        | ✓
+Tender Management                | ✗     | ✗       | ✓        | ✓
+API Access                       | ✗     | ✗       | ✗        | ✓
+Custom Fields                    | ✗     | ✗       | ✓        | ✓
+Workflow Automation              | ✗     | ✗       | ✗        | ✓
+White Label                      | ✗     | ✗       | ✗        | ✓
+Dedicated Support                | ✗     | ✗       | ✗        | ✓
+SLA                             | ✗     | ✗       | ✗        | ✓
+
+Email Support                    | ✓     | ✓       | ✓        | ✓
+Chat Support                     | ✗     | ✗       | ✓        | ✓
+Phone Support                    | ✗     | ✗       | ✗        | ✓
+
+Price (Monthly)                  | Free  | ₹999    | ₹2,499   | Custom
+Price (Yearly)                   | Free  | ₹9,990  | ₹24,990  | Custom
+                                |       | (17% off)| (17% off)|
+
+
+================================================================================
+TECHNICAL ARCHITECTURE
+================================================================================
+
+Frontend:
+- React 18
+- React Router v6
+- Zustand (state management)
+- TailwindCSS (styling)
+- Lucide Icons
+- React Hot Toast
+- Chart.js / Recharts
+- QR Code generation
+- PDF generation
+
+Backend:
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT authentication
+- Bcrypt (password hashing)
+- Multer (file uploads)
+- Nodemailer (emails)
+- Razorpay SDK
+
+Multi-Tenancy:
+- Single database, tenant field approach
+- Compound unique indexes (field + tenant)
+- Tenant isolation in all queries
+- JWT includes tenant ID
+- Middleware for limit enforcement
+- Usage tracking per tenant
+
+Security:
+- JWT token authentication
+- Password hashing with bcrypt
+- Role-based access control
+- Tenant data isolation
+- Input validation
+- XSS protection
+- CSRF protection
+- Rate limiting
+
+
+================================================================================
+DEPLOYMENT RECOMMENDATIONS
+================================================================================
+
+For minimal deployment cost (as requested):
+
+1. Frontend Hosting:
+   - Vercel (Free tier) - Recommended
+   - Netlify (Free tier)
+   - GitHub Pages
+
+2. Backend Hosting:
+   - Railway.app ($5/month) - Recommended
+   - Render.com (Free tier with limitations)
+   - Heroku ($7/month)
+   - DigitalOcean App Platform ($5/month)
+
+3. Database:
+   - MongoDB Atlas (Free tier: 512MB)
+   - Can upgrade to $9/month for 2GB
+
+4. File Storage:
+   - Cloudinary (Free tier: 25GB)
+   - AWS S3 (Pay as you go, very cheap for small usage)
+
+5. Email Service:
+   - SendGrid (Free: 100 emails/day)
+   - Mailgun (Free: 5000 emails/month)
+
+Total Estimated Cost: $5-15/month for small to medium usage
+
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
+
+This documentation covers all current pages and suggests future enhancements.
+For technical implementation details, refer to the codebase.
+
+For questions or suggestions, contact the development team.
