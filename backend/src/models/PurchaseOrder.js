@@ -63,16 +63,16 @@ const purchaseOrderSchema = new mongoose.Schema(
     expectedDeliveryDate: Date,
     deliveryDate: Date,
 
-    // Supplier details
-    supplier: {
+    // Customer details (vendor/seller)
+    customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Supplier',
+      ref: 'Customer',
       required: true,
     },
-    supplierName: String,
-    supplierEmail: String,
-    supplierPhone: String,
-    supplierGst: String,
+    customerName: String,
+    customerEmail: String,
+    customerPhone: String,
+    customerGst: String,
 
     // Delivery address (warehouse)
     deliveryWarehouse: {
@@ -198,7 +198,7 @@ const purchaseOrderSchema = new mongoose.Schema(
 
 // Indexes
 purchaseOrderSchema.index({ poNumber: 1, tenant: 1 }, { unique: true });
-purchaseOrderSchema.index({ supplier: 1 });
+purchaseOrderSchema.index({ customer: 1 });
 purchaseOrderSchema.index({ status: 1 });
 purchaseOrderSchema.index({ createdAt: -1 });
 purchaseOrderSchema.index({ poDate: -1 });

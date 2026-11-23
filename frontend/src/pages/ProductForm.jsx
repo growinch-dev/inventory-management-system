@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Save, Printer } from 'lucide-react';
-import { productsAPI, suppliersAPI, warehousesAPI } from '../services/api';
+import { productsAPI, warehousesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import {
   PageHeader,
@@ -21,7 +21,6 @@ const ProductForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [suppliers, setSuppliers] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -36,7 +35,6 @@ const ProductForm = () => {
     quantity: 0,
     reorderLevel: 10,
     unit: 'PCS',
-    supplier: '',
     batchNumber: '',
     barcode: '',
     manufacturingDate: '',
@@ -50,21 +48,11 @@ const ProductForm = () => {
   });
 
   useEffect(() => {
-    fetchSuppliers();
     fetchWarehouses();
     if (isEdit) {
       fetchProduct();
     }
   }, [id]);
-
-  const fetchSuppliers = async () => {
-    try {
-      const response = await suppliersAPI.getAll({ limit: 100 });
-      setSuppliers(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load suppliers');
-    }
-  };
 
   const fetchWarehouses = async () => {
     try {
@@ -84,7 +72,6 @@ const ProductForm = () => {
         ...product,
         unitPrice: product.unitPrice?.toString() || '',
         costPrice: product.costPrice?.toString() || '',
-        supplier: product.supplier?._id || '',
         warehouseRef: product.warehouseRef?._id || product.warehouseRef || '',
         manufacturingDate: product.manufacturingDate?.split('T')[0] || '',
         expiryDate: product.expiryDate?.split('T')[0] || '',
@@ -130,11 +117,6 @@ const ProductForm = () => {
       setSaving(false);
     }
   };
-
-  const supplierOptions = [
-    { value: '', label: 'Select Supplier' },
-    ...suppliers.map((s) => ({ value: s._id, label: s.name })),
-  ];
 
   const warehouseOptions = [
     { value: '', label: 'Select Warehouse' },
@@ -194,14 +176,6 @@ const ProductForm = () => {
                 value={formData.hsnCode}
                 onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
                 placeholder="e.g., 9018"
-              />
-
-              <Select
-                label="Supplier"
-                value={formData.supplier}
-                onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                options={supplierOptions}
-                placeholder="Select Supplier"
               />
 
               <Input

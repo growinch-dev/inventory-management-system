@@ -14,7 +14,7 @@ import {
   Clock,
   Truck,
 } from 'lucide-react';
-import { purchaseOrdersAPI, suppliersAPI } from '../services/api';
+import { purchaseOrdersAPI, customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import {
   PageHeader,
@@ -40,19 +40,19 @@ const PO_STATUSES = [
 const PurchaseOrders = () => {
   const { t } = useLanguage();
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [supplier, setSupplier] = useState('');
+  const [customer, setCustomer] = useState('');
 
   useEffect(() => {
     fetchPurchaseOrders();
-    fetchSuppliers();
+    fetchCustomers();
     fetchStats();
-  }, [pagination.page, status, supplier]);
+  }, [pagination.page, status, customer]);
 
   const fetchPurchaseOrders = async () => {
     try {
@@ -62,7 +62,7 @@ const PurchaseOrders = () => {
         limit: 20,
         ...(search && { search }),
         ...(status && { status }),
-        ...(supplier && { supplier }),
+        ...(customer && { customer }),
       };
       const response = await purchaseOrdersAPI.getAll(params);
       setPurchaseOrders(response.data.data);
@@ -78,12 +78,12 @@ const PurchaseOrders = () => {
     }
   };
 
-  const fetchSuppliers = async () => {
+  const fetchCustomers = async () => {
     try {
-      const response = await suppliersAPI.getAll({ limit: 100 });
-      setSuppliers(response.data.data);
+      const response = await customersAPI.getAll({ limit: 100 });
+      setCustomers(response.data.data);
     } catch (error) {
-      console.error('Failed to load suppliers');
+      console.error('Failed to load customers');
     }
   };
 
@@ -247,19 +247,19 @@ const PurchaseOrders = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by PO number, supplier..."
+              placeholder="Search by PO number, vendor..."
               className="input pl-10"
             />
           </div>
 
-          {/* Supplier Filter */}
+          {/* Vendor Filter */}
           <select
-            value={supplier}
-            onChange={(e) => setSupplier(e.target.value)}
+            value={customer}
+            onChange={(e) => setCustomer(e.target.value)}
             className="input sm:w-48 cursor-pointer"
           >
-            <option value="">{t('common.all')} {t('suppliers.title')}</option>
-            {suppliers.map((s) => (
+            <option value="">All Vendors</option>
+            {customers.map((s) => (
               <option key={s._id} value={s._id}>{s.name}</option>
             ))}
           </select>
@@ -300,7 +300,7 @@ const PurchaseOrders = () => {
               <Table.Head>
                 <Table.Row>
                   <Table.Header>{t('purchaseOrders.poNumber')}</Table.Header>
-                  <Table.Header>{t('purchaseOrders.supplier')}</Table.Header>
+                  <Table.Header>Vendor</Table.Header>
                   <Table.Header>{t('purchaseOrders.poDate')}</Table.Header>
                   <Table.Header align="center">{t('invoices.items')}</Table.Header>
                   <Table.Header align="right">{t('invoices.grandTotal')}</Table.Header>
@@ -326,9 +326,9 @@ const PurchaseOrders = () => {
                         </Link>
                       </Table.Cell>
                       <Table.Cell>
-                        <p className="font-medium text-secondary">{po.supplierName}</p>
-                        {po.supplierEmail && (
-                          <p className="text-xs text-secondary-500 truncate max-w-[180px]">{po.supplierEmail}</p>
+                        <p className="font-medium text-secondary">{po.customerName}</p>
+                        {po.customerEmail && (
+                          <p className="text-xs text-secondary-500 truncate max-w-[180px]">{po.customerEmail}</p>
                         )}
                       </Table.Cell>
                       <Table.Cell>

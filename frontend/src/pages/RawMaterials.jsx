@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Plus, Package, AlertTriangle, Edit, Trash2 } from 'lucide-react';
-import { PageHeader, Button, Table, Badge, SearchFilter, Modal, Input, Select } from '../components/ui';
+import { Plus, Package, AlertTriangle, Edit, Trash2, Building2, ExternalLink } from 'lucide-react';
+import { PageHeader, Button, Table, Badge, SearchFilter, Modal, Input, Select, Textarea } from '../components/ui';
+import { customersAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const RawMaterials = () => {
+  const navigate = useNavigate();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
+  const [vendors, setVendors] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
+    vendor: '',
     unit: 'Pieces',
     minimumStock: '',
     currentStock: '',
@@ -19,6 +24,7 @@ const RawMaterials = () => {
 
   useEffect(() => {
     fetchMaterials();
+    fetchVendors();
   }, []);
 
   const fetchMaterials = async () => {
@@ -30,12 +36,12 @@ const RawMaterials = () => {
 
       // Mock data
       setMaterials([
-        { _id: '1', name: 'PET Preform 500ml', unit: 'Pieces', currentStock: 50000, minimumStock: 10000, status: 'sufficient' },
-        { _id: '2', name: 'PET Preform 1L', unit: 'Pieces', currentStock: 30000, minimumStock: 10000, status: 'sufficient' },
-        { _id: '3', name: 'Bottle Cap', unit: 'Pieces', currentStock: 8000, minimumStock: 20000, status: 'low' },
-        { _id: '4', name: 'Label Roll', unit: 'Rolls', currentStock: 50, minimumStock: 20, status: 'sufficient' },
-        { _id: '5', name: 'Shrink Film', unit: 'KG', currentStock: 150, minimumStock: 200, status: 'low' },
-        { _id: '6', name: 'Carton Box', unit: 'Pieces', currentStock: 2000, minimumStock: 500, status: 'sufficient' },
+        { _id: '1', name: 'PET Preform 500ml', vendor: { _id: 'v1', name: 'Plastic Supplies Co.' }, unit: 'Pieces', currentStock: 50000, minimumStock: 10000, status: 'sufficient' },
+        { _id: '2', name: 'PET Preform 1L', vendor: { _id: 'v1', name: 'Plastic Supplies Co.' }, unit: 'Pieces', currentStock: 30000, minimumStock: 10000, status: 'sufficient' },
+        { _id: '3', name: 'Bottle Cap', vendor: { _id: 'v2', name: 'Cap Industries Ltd.' }, unit: 'Pieces', currentStock: 8000, minimumStock: 20000, status: 'low' },
+        { _id: '4', name: 'Label Roll', vendor: { _id: 'v3', name: 'Print Tech Solutions' }, unit: 'Rolls', currentStock: 50, minimumStock: 20, status: 'sufficient' },
+        { _id: '5', name: 'Shrink Film', vendor: { _id: 'v4', name: 'Packaging Materials Inc.' }, unit: 'KG', currentStock: 150, minimumStock: 200, status: 'low' },
+        { _id: '6', name: 'Carton Box', vendor: { _id: 'v4', name: 'Packaging Materials Inc.' }, unit: 'Pieces', currentStock: 2000, minimumStock: 500, status: 'sufficient' },
       ]);
     } catch (error) {
       toast.error('Failed to fetch raw materials');
@@ -44,10 +50,20 @@ const RawMaterials = () => {
     }
   };
 
+  const fetchVendors = async () => {
+    try {
+      const response = await customersAPI.getAll({ limit: 100 });
+      setVendors(response.data.data || []);
+    } catch (error) {
+      console.error('Failed to load vendors');
+    }
+  };
+
   const handleAdd = () => {
     setEditingMaterial(null);
     setFormData({
       name: '',
+      vendor: '',
       unit: 'Pieces',
       minimumStock: '',
       currentStock: '',
@@ -60,6 +76,7 @@ const RawMaterials = () => {
     setEditingMaterial(material);
     setFormData({
       name: material.name,
+      vendor: material.vendor?._id || '',
       unit: material.unit,
       minimumStock: material.minimumStock,
       currentStock: material.currentStock,
@@ -100,6 +117,11 @@ const RawMaterials = () => {
     }
   };
 
+  const handleAddVendor = () => {
+    // Open vendors page in a new tab
+    window.open('/vendors', '_blank');
+  };
+
   const getStockBadge = (status) => {
     if (status === 'low') {
       return <Badge variant="warning" icon={AlertTriangle}>Low Stock</Badge>;
@@ -114,6 +136,15 @@ const RawMaterials = () => {
       render: (row) => (
         <div>
           <div className="font-medium">{row.name}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'vendor',
+      label: 'Vendor',
+      render: (row) => (
+        <div>
+          <div className="font-medium">{row.vendor?.name || '-'}</div>
         </div>
       ),
     },
@@ -258,6 +289,27 @@ const RawMaterials = () => {
             placeholder="e.g., PET Preform 500ml"
             required
           />
+
+          <div>
+            <label className="block text-sm font-medium text-secondary-700 mb-1">
+              Vendor <span className="text-danger">*</span>
+            </label>
+            <div className="flex gap-2">
+              <Select
+                value={formData.vendor}
+                onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                options={[
+                  { value: '', label: 'Select Vendor' },
+                  ...vendors.map((vendor) => ({
+                    value: vendor._id,
+                    label: vendor.name,
+                  })),
+                ]}
+                required
+                className="flex-1"
+              />
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Select

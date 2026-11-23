@@ -152,7 +152,7 @@ const ProductionForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Production Details */}
         <FormSection title="Production Details">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Input
               label="Production Date"
               type="date"
@@ -179,16 +179,16 @@ const ProductionForm = () => {
               onChange={(e) => handleChange('batchNumber', e.target.value)}
               placeholder="Optional"
             />
-          </div>
 
-          <Select
-            label="Product / Bottle Size"
-            value={formData.productId}
-            onChange={(e) => handleChange('productId', e.target.value)}
-            options={products}
-            placeholder="Select product"
-            required
-          />
+            <Select
+              label="Product / Bottle Size"
+              value={formData.productId}
+              onChange={(e) => handleChange('productId', e.target.value)}
+              options={products}
+              placeholder="Select product"
+              required
+            />
+          </div>
         </FormSection>
 
         {/* Quantity Details */}

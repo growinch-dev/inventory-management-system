@@ -12,7 +12,7 @@ import {
   FileText,
   ScanLine,
 } from 'lucide-react';
-import { purchaseOrdersAPI, suppliersAPI, productsAPI, warehousesAPI } from '../services/api';
+import { purchaseOrdersAPI, customersAPI, productsAPI, warehousesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { PageHeader, Card, Button, FormSection } from '../components/ui';
 import { useLanguage } from '../context/LanguageContext';
@@ -26,7 +26,7 @@ const PurchaseOrderForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [suppliers, setSuppliers] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [productSearch, setProductSearch] = useState('');
@@ -35,7 +35,7 @@ const PurchaseOrderForm = () => {
   const [showScanner, setShowScanner] = useState(false);
 
   const [formData, setFormData] = useState({
-    supplier: '',
+    customer: '',
     poDate: new Date().toISOString().split('T')[0],
     expectedDeliveryDate: '',
     deliveryWarehouse: '',
@@ -48,7 +48,7 @@ const PurchaseOrderForm = () => {
   });
 
   useEffect(() => {
-    fetchSuppliers();
+    fetchCustomers();
     fetchProducts();
     fetchWarehouses();
     if (isEditing) {
@@ -56,12 +56,12 @@ const PurchaseOrderForm = () => {
     }
   }, [id]);
 
-  const fetchSuppliers = async () => {
+  const fetchCustomers = async () => {
     try {
-      const response = await suppliersAPI.getAll({ limit: 100, isActive: true });
-      setSuppliers(response.data.data);
+      const response = await customersAPI.getAll({ limit: 100, isActive: true });
+      setCustomers(response.data.data);
     } catch (error) {
-      toast.error('Failed to load suppliers');
+      toast.error('Failed to load customers');
     }
   };
 
@@ -94,7 +94,7 @@ const PurchaseOrderForm = () => {
       const response = await purchaseOrdersAPI.getOne(id);
       const po = response.data.data;
       setFormData({
-        supplier: po.supplier?._id || po.supplier,
+        customer: po.customer?._id || po.customer,
         poDate: po.poDate ? new Date(po.poDate).toISOString().split('T')[0] : '',
         expectedDeliveryDate: po.expectedDeliveryDate
           ? new Date(po.expectedDeliveryDate).toISOString().split('T')[0]
@@ -246,8 +246,8 @@ const PurchaseOrderForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.supplier) {
-      toast.error('Please select a supplier');
+    if (!formData.customer) {
+      toast.error('Please select a customer');
       return;
     }
 
@@ -297,21 +297,21 @@ const PurchaseOrderForm = () => {
       />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Supplier & Dates */}
+        {/* Customer & Dates */}
         <Card>
           <Card.Content className="p-6">
-            <FormSection icon={Building2} title="Supplier Information">
+            <FormSection icon={Building2} title="Vendor Information">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div>
-                  <label className="label">{t('purchaseOrders.supplier')} *</label>
+                  <label className="label">Vendor *</label>
                   <select
-                    value={formData.supplier}
-                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                    value={formData.customer}
+                    onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
                     className="select"
                     required
                   >
-                    <option value="">Select supplier</option>
-                    {suppliers.map((s) => (
+                    <option value="">Select vendor</option>
+                    {customers.map((s) => (
                       <option key={s._id} value={s._id}>
                         {s.name}
                       </option>

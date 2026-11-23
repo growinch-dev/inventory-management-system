@@ -129,10 +129,6 @@ const productSchema = new mongoose.Schema({
     default: 'PCS',
     enum: ['PCS', 'SET', 'BOX', 'CARTON', 'CRATE', 'PAIR', 'KG', 'MTR', 'LTR', 'ROLL', 'BAG'],
   },
-  supplier: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Supplier',
-  },
   images: [{
     type: String,
   }],

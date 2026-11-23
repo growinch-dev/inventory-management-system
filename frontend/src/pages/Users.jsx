@@ -15,7 +15,7 @@ const availablePermissions = [
   { id: 'raw-materials', label: 'Raw Materials', group: 'Masters' },
   { id: 'categories', label: 'Categories', group: 'Masters' },
   { id: 'customers', label: 'Customers', group: 'Masters' },
-  { id: 'suppliers', label: 'Suppliers', group: 'Masters' },
+  { id: 'vendors', label: 'Vendors', group: 'Masters' },
   { id: 'warehouses', label: 'Warehouses', group: 'Masters' },
   { id: 'purchase-orders', label: 'Purchases', group: 'Operations' },
   { id: 'production', label: 'Production', group: 'Operations' },

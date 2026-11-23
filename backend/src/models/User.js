@@ -36,9 +36,9 @@ const userSchema = new mongoose.Schema({
     type: [String],
     default: [],
     // Available permissions:
-    // dashboard, products, raw-materials, categories, customers, suppliers, warehouses,
+    // dashboard, products, raw-materials, categories, customers, vendors, warehouses,
     // purchase-orders, production, invoices, delivery-challans, pos,
-    // movements, transfers, labels, expenses, payments, receipts, reports, settings
+    // movements, transfers, labels, expenses, payments, receipts, reports, settings, users
   },
   isActive: {
     type: Boolean,

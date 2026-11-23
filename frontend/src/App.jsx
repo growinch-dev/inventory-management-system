@@ -52,6 +52,7 @@ import Expenses from './pages/Expenses';
 import Receipts from './pages/Receipts';
 import Categories from './pages/Categories';
 import Users from './pages/Users';
+import Vendors from './pages/Vendors';
 
 // Auth store
 import useAuthStore from './store/authStore';
@@ -159,6 +160,9 @@ function App() {
 
           {/* Users */}
           <Route path="users" element={<Users />} />
+
+          {/* Vendors */}
+          <Route path="vendors" element={<Vendors />} />
 
           {/* Expenses */}
           <Route path="expenses" element={<Expenses />} />

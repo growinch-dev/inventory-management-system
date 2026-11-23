@@ -26,6 +26,7 @@ import {
   IndianRupee,
   FolderTree,
   UserCog,
+  Building2,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import { useLanguage } from '../context/LanguageContext';
@@ -48,7 +49,7 @@ const navigationGroups = [
       { name: 'Raw Materials', href: '/raw-materials', icon: Package },
       { name: 'Categories', href: '/categories', icon: FolderTree },
       { name: 'Customers', href: '/customers', icon: Users },
-      { name: 'Suppliers', href: '/suppliers', icon: Truck },
+      { name: 'Vendors', href: '/vendors', icon: Building2 },
       { name: 'Warehouses', href: '/warehouses', icon: Warehouse },
     ],
   },
@@ -159,7 +160,7 @@ const DashboardLayout = () => {
       '/raw-materials': 'raw-materials',
       '/categories': 'categories',
       '/customers': 'customers',
-      '/suppliers': 'suppliers',
+      '/vendors': 'vendors',
       '/warehouses': 'warehouses',
       '/purchase-orders': 'purchase-orders',
       '/production': 'production',
