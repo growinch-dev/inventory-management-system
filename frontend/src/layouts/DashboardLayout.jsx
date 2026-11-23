@@ -24,6 +24,8 @@ import {
   ClipboardList,
   Zap,
   IndianRupee,
+  FolderTree,
+  UserCog,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import { useLanguage } from '../context/LanguageContext';
@@ -44,6 +46,7 @@ const navigationGroups = [
     items: [
       { name: 'Products', href: '/products', icon: Package },
       { name: 'Raw Materials', href: '/raw-materials', icon: Package },
+      { name: 'Categories', href: '/categories', icon: FolderTree },
       { name: 'Customers', href: '/customers', icon: Users },
       { name: 'Suppliers', href: '/suppliers', icon: Truck },
       { name: 'Warehouses', href: '/warehouses', icon: Warehouse },
@@ -83,6 +86,7 @@ const navigationGroups = [
     label: 'Reports & Tools',
     items: [
       { name: 'Reports', href: '/reports', icon: BarChart3 },
+      { name: 'Users', href: '/users', icon: UserCog },
       { name: 'Settings', href: '/settings', icon: Settings },
     ],
   },
@@ -139,6 +143,53 @@ const DashboardLayout = () => {
     return location.pathname.startsWith(href);
   };
 
+  // Check if user has permission to view a menu item
+  const hasPermission = (href) => {
+    // Owner and admins have access to all menus
+    if (user?.isOwner || user?.role === 'admin' || user?.role === 'super_admin') {
+      return true;
+    }
+
+    // Dashboard is always accessible
+    if (href === '/') return true;
+
+    // Map href to permission key
+    const permissionMap = {
+      '/products': 'products',
+      '/raw-materials': 'raw-materials',
+      '/categories': 'categories',
+      '/customers': 'customers',
+      '/suppliers': 'suppliers',
+      '/warehouses': 'warehouses',
+      '/purchase-orders': 'purchase-orders',
+      '/production': 'production',
+      '/invoices': 'invoices',
+      '/delivery-challans': 'delivery-challans',
+      '/pos': 'pos',
+      '/movements': 'movements',
+      '/transfers': 'transfers',
+      '/labels': 'labels',
+      '/expenses': 'expenses',
+      '/payments': 'payments',
+      '/receipts': 'receipts',
+      '/reports': 'reports',
+      '/users': 'users',
+      '/settings': 'settings',
+    };
+
+    const permissionKey = permissionMap[href];
+    if (!permissionKey) return true; // If no mapping, allow access
+
+    // Check if user has this permission
+    return user?.permissions?.includes(permissionKey);
+  };
+
+  // Filter navigation groups based on permissions
+  const filteredNavigationGroups = navigationGroups.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => hasPermission(item.href)),
+  })).filter((group) => group.items.length > 0); // Remove empty groups
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Mobile sidebar backdrop */}
@@ -175,7 +226,7 @@ const DashboardLayout = () => {
         </div>
 
         <nav className="p-2 overflow-y-auto h-[calc(100vh-64px-72px)] scrollbar-thin" aria-label="Sidebar navigation">
-          {navigationGroups.map((group) => (
+          {filteredNavigationGroups.map((group) => (
             <div key={group.id} className="mb-1">
               {group.label && (
                 <div className="px-3 py-2 text-xs font-semibold text-secondary-400 uppercase tracking-wider">

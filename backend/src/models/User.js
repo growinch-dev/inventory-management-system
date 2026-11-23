@@ -32,6 +32,14 @@ const userSchema = new mongoose.Schema({
     enum: ['super_admin', 'admin', 'manager', 'staff'],
     default: 'staff',
   },
+  permissions: {
+    type: [String],
+    default: [],
+    // Available permissions:
+    // dashboard, products, raw-materials, categories, customers, suppliers, warehouses,
+    // purchase-orders, production, invoices, delivery-challans, pos,
+    // movements, transfers, labels, expenses, payments, receipts, reports, settings
+  },
   isActive: {
     type: Boolean,
     default: true,
@@ -60,11 +68,10 @@ userSchema.index({ email: 1, tenant: 1 }, { unique: true });
 
 // Hash password before saving
 userSchema.pre('save', async function() {
-  if (!this.isModified('password')) {
-    return;
+  if (this.isModified('password')) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
   }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Match password

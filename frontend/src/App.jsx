@@ -50,6 +50,8 @@ import ProductionForm from './pages/ProductionForm';
 import RawMaterials from './pages/RawMaterials';
 import Expenses from './pages/Expenses';
 import Receipts from './pages/Receipts';
+import Categories from './pages/Categories';
+import Users from './pages/Users';
 
 // Auth store
 import useAuthStore from './store/authStore';
@@ -151,6 +153,12 @@ function App() {
 
           {/* Raw Materials */}
           <Route path="raw-materials" element={<RawMaterials />} />
+
+          {/* Categories */}
+          <Route path="categories" element={<Categories />} />
+
+          {/* Users */}
+          <Route path="users" element={<Users />} />
 
           {/* Expenses */}
           <Route path="expenses" element={<Expenses />} />

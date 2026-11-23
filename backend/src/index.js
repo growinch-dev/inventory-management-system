@@ -44,6 +44,8 @@ app.use('/api/delivery-challans', require('./routes/deliveryChallans'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Product batches sub-route
 const { productBatchRouter } = require('./routes/batches');

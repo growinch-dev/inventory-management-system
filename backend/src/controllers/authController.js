@@ -163,10 +163,8 @@ exports.getMe = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: {
-        user,
-        tenant,
-      },
+      data: user,
+      tenant: tenant,
     });
   } catch (error) {
     next(error);
@@ -232,6 +230,7 @@ const sendTokenResponse = (user, statusCode, res, tenant = null) => {
       email: user.email,
       role: user.role,
       isOwner: user.isOwner,
+      permissions: user.permissions || [],
     },
   };
 

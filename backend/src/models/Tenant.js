@@ -172,7 +172,7 @@ const tenantSchema = new mongoose.Schema({
 });
 
 // Generate slug from company name
-tenantSchema.pre('save', async function(next) {
+tenantSchema.pre('save', async function() {
   if (this.isModified('name') || !this.slug) {
     let baseSlug = this.name
       .toLowerCase()
@@ -190,17 +190,15 @@ tenantSchema.pre('save', async function(next) {
     }
     this.slug = slug;
   }
-  next();
 });
 
 // Set trial end date for new tenants
-tenantSchema.pre('save', function(next) {
+tenantSchema.pre('save', function() {
   if (this.isNew && !this.subscription.trialEndsAt) {
     // 14-day free trial
     this.subscription.trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
     this.subscription.status = 'trialing';
   }
-  next();
 });
 
 // Update limits based on plan
