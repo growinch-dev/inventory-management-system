@@ -113,7 +113,7 @@ exports.checkFeature = (featureName) => {
         return next();
       }
 
-      const hasFeature = tenant.features[featureKey];
+      const hasFeature = tenant.limits?.features?.[featureKey] === true;
 
       if (!hasFeature) {
         return res.status(403).json({

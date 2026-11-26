@@ -42,7 +42,6 @@ exports.getProducts = async (req, res, next) => {
 
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
-      .populate('supplier', 'name')
       .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
@@ -67,7 +66,7 @@ exports.getProduct = async (req, res, next) => {
     const product = await Product.findOne({
       _id: req.params.id,
       tenant: req.user.tenant
-    }).populate('supplier');
+    });
 
     if (!product) {
       return res.status(404).json({
@@ -290,14 +289,14 @@ exports.getProductBySku = async (req, res, next) => {
     let product = await Product.findOne({
       sku: code.toUpperCase(),
       tenant: req.user.tenant
-    }).populate('supplier');
+    });
 
     if (!product) {
       // Try searching by barcode
       product = await Product.findOne({
         barcode: code,
         tenant: req.user.tenant
-      }).populate('supplier');
+      });
     }
 
     if (!product) {
@@ -354,7 +353,7 @@ exports.getLowStockProducts = async (req, res, next) => {
       tenant: req.user.tenant,
       isActive: true,
       $expr: { $lte: ['$quantity', '$reorderLevel'] },
-    }).populate('supplier', 'name');
+    });
 
     res.status(200).json({
       success: true,

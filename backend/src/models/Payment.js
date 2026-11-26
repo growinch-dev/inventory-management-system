@@ -156,7 +156,7 @@ const paymentSchema = new mongoose.Schema({
 });
 
 // Generate payment number
-paymentSchema.pre('save', async function() {
+paymentSchema.pre('validate', async function() {
   if (!this.paymentNumber) {
     const year = new Date().getFullYear();
     const month = String(new Date().getMonth() + 1).padStart(2, '0');

@@ -220,7 +220,7 @@ expenseSchema.index({ approvalStatus: 1 });
 expenseSchema.index({ vendor: 'text', description: 'text' });
 
 // Pre-save middleware to auto-generate expense number
-expenseSchema.pre('save', async function(next) {
+expenseSchema.pre('validate', async function () {
   if (!this.expenseNumber) {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
@@ -267,7 +267,6 @@ expenseSchema.pre('save', async function(next) {
     }
   }
 
-  next();
 });
 
 // Method to mark as paid

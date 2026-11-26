@@ -284,7 +284,7 @@ tenderSchema.virtual('supplyProgress').get(function() {
 });
 
 // Pre-save to generate tender number
-tenderSchema.pre('save', async function(next) {
+tenderSchema.pre('validate', async function () {
   if (!this.tenderNumber) {
     const date = new Date();
     const year = date.getFullYear();
@@ -311,7 +311,6 @@ tenderSchema.pre('save', async function(next) {
     });
   }
 
-  next();
 });
 
 module.exports = mongoose.model('Tender', tenderSchema);

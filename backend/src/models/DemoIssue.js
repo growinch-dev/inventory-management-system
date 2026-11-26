@@ -222,7 +222,7 @@ demoIssueSchema.virtual('totalPending').get(function() {
 });
 
 // Pre-save to generate issue number and update status
-demoIssueSchema.pre('save', async function(next) {
+demoIssueSchema.pre('validate', async function () {
   // Generate issue number
   if (!this.issueNumber) {
     const date = new Date();
@@ -307,7 +307,6 @@ demoIssueSchema.pre('save', async function(next) {
     }
   }
 
-  next();
 });
 
 module.exports = mongoose.model('DemoIssue', demoIssueSchema);

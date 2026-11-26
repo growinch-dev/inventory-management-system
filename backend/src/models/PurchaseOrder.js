@@ -222,7 +222,7 @@ purchaseOrderSchema.virtual('pendingItems').get(function () {
 });
 
 // Pre-save hook to generate PO number
-purchaseOrderSchema.pre('save', async function (next) {
+purchaseOrderSchema.pre('validate', async function () {
   if (!this.poNumber) {
     const now = new Date();
     const year = now.getFullYear();
@@ -262,7 +262,6 @@ purchaseOrderSchema.pre('save', async function (next) {
   this.grandTotal =
     this.subtotal - this.discountAmount + this.totalTax + (this.shippingCharges || 0);
 
-  next();
 });
 
 module.exports = mongoose.model('PurchaseOrder', purchaseOrderSchema);

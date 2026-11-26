@@ -32,7 +32,7 @@ const stockMovementSchema = new mongoose.Schema({
   },
   reason: {
     type: String,
-    enum: ['purchase', 'sale', 'return', 'damage', 'expired', 'adjustment', 'transfer', 'initial'],
+    enum: ['purchase', 'sale', 'return', 'damage', 'expired', 'adjustment', 'transfer', 'initial', 'demo', 'production'],
     required: true,
   },
   reference: {
@@ -40,7 +40,7 @@ const stockMovementSchema = new mongoose.Schema({
   },
   referenceType: {
     type: String,
-    enum: ['invoice', 'purchase_order', 'transfer', 'manual', 'qr_scan'],
+    enum: ['invoice', 'purchase_order', 'transfer', 'manual', 'qr_scan', 'delivery_challan', 'demo_issue', 'batch', 'production'],
   },
   referenceId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,7 +48,7 @@ const stockMovementSchema = new mongoose.Schema({
   },
   referenceModel: {
     type: String,
-    enum: ['Invoice', 'Transfer', 'PurchaseOrder'],
+    enum: ['Invoice', 'Transfer', 'PurchaseOrder', 'DeliveryChallan', 'DemoIssue', 'Batch', 'Production'],
   },
   warehouse: {
     type: String,

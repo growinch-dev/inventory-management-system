@@ -224,7 +224,7 @@ rawMaterialSchema.virtual('stockValue').get(function() {
 });
 
 // Pre-save middleware to auto-generate material code
-rawMaterialSchema.pre('save', async function(next) {
+rawMaterialSchema.pre('save', async function () {
   if (!this.code) {
     const prefix = 'RM';
     const categoryPrefix = this.category.substring(0, 3).toUpperCase();
@@ -246,7 +246,6 @@ rawMaterialSchema.pre('save', async function(next) {
     this.code = `${prefix}-${categoryPrefix}-${String(sequence).padStart(5, '0')}`;
   }
 
-  next();
 });
 
 // Method to update stock

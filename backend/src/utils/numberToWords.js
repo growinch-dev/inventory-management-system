@@ -32,7 +32,7 @@ const convertLessThanThousand = (num) => {
 const numberToWords = (amount) => {
   if (amount === 0) return 'Zero Rupees Only';
 
-  const rupees = Math.floor(amount);
+  let rupees = Math.floor(amount);
   const paise = Math.round((amount - rupees) * 100);
 
   let result = '';

@@ -111,7 +111,7 @@ transferSchema.index({ status: 1, createdAt: -1 });
 transferSchema.index({ fromWarehouse: 1, toWarehouse: 1 });
 
 // Generate transfer number
-transferSchema.pre('save', async function() {
+transferSchema.pre('validate', async function() {
   if (!this.transferNumber) {
     const date = new Date();
     const year = date.getFullYear();

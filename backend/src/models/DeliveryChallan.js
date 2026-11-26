@@ -208,7 +208,7 @@ const deliveryChallanSchema = new mongoose.Schema({
 });
 
 // Generate challan number
-deliveryChallanSchema.pre('save', async function() {
+deliveryChallanSchema.pre('validate', async function() {
   if (!this.challanNumber) {
     const year = new Date().getFullYear();
     const month = String(new Date().getMonth() + 1).padStart(2, '0');

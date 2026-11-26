@@ -185,7 +185,7 @@ const invoiceSchema = new mongoose.Schema({
 invoiceSchema.index({ invoiceNumber: 1, tenant: 1 }, { unique: true });
 
 // Generate invoice number
-invoiceSchema.pre('save', async function() {
+invoiceSchema.pre('validate', async function() {
   if (!this.invoiceNumber) {
     const year = new Date().getFullYear();
     const month = String(new Date().getMonth() + 1).padStart(2, '0');

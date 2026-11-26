@@ -169,7 +169,7 @@ batchSchema.virtual('expiryStatus').get(function () {
 });
 
 // Pre-save hook to update status
-batchSchema.pre('save', function (next) {
+batchSchema.pre('save', function () {
   // Update status based on quantity and expiry
   if (this.currentQuantity <= 0) {
     this.status = 'depleted';
@@ -184,7 +184,6 @@ batchSchema.pre('save', function (next) {
     this.totalCost = this.costPerUnit * this.initialQuantity;
   }
 
-  next();
 });
 
 // Static method to get batches expiring soon

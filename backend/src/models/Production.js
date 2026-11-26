@@ -13,7 +13,6 @@ const productionSchema = new mongoose.Schema({
   productionNumber: {
     type: String,
     required: true,
-    unique: true,
   },
   productionDate: {
     type: Date,
@@ -208,7 +207,7 @@ productionSchema.virtual('rejectionRate').get(function() {
 });
 
 // Pre-save middleware to auto-generate production number
-productionSchema.pre('save', async function(next) {
+productionSchema.pre('validate', async function () {
   if (!this.productionNumber) {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
@@ -248,7 +247,6 @@ productionSchema.pre('save', async function(next) {
     this.productionCost.laborCost +
     this.productionCost.overheadCost;
 
-  next();
 });
 
 // Method to complete production

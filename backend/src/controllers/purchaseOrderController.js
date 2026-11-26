@@ -1,6 +1,6 @@
 const PurchaseOrder = require('../models/PurchaseOrder');
 const Product = require('../models/Product');
-const Supplier = require('../models/Supplier');
+const Customer = require('../models/Customer');
 const Batch = require('../models/Batch');
 const StockMovement = require('../models/StockMovement');
 
@@ -13,7 +13,8 @@ exports.getPurchaseOrders = async (req, res, next) => {
       page = 1,
       limit = 20,
       status,
-      supplier,
+      customer,
+      supplier, // legacy filter name
       search,
       startDate,
       endDate,
@@ -25,12 +26,12 @@ exports.getPurchaseOrders = async (req, res, next) => {
 
     // Filters
     if (status) query.status = status;
-    if (supplier) query.supplier = supplier;
+    if (customer || supplier) query.customer = customer || supplier;
 
     if (search) {
       query.$or = [
         { poNumber: { $regex: search, $options: 'i' } },
-        { supplierName: { $regex: search, $options: 'i' } },
+        { customerName: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -42,7 +43,7 @@ exports.getPurchaseOrders = async (req, res, next) => {
 
     const total = await PurchaseOrder.countDocuments(query);
     const purchaseOrders = await PurchaseOrder.find(query)
-      .populate('supplier', 'name email phone')
+      .populate('customer', 'name email phone')
       .populate('deliveryWarehouse', 'name code')
       .populate('createdBy', 'name')
       .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
@@ -68,7 +69,7 @@ exports.getPurchaseOrders = async (req, res, next) => {
 exports.getPurchaseOrder = async (req, res, next) => {
   try {
     const purchaseOrder = await PurchaseOrder.findOne({ _id: req.params.id, tenant: req.user.tenant })
-      .populate('supplier')
+      .populate('customer')
       .populate('deliveryWarehouse')
       .populate('items.product', 'name sku category unit')
       .populate('createdBy', 'name email')
@@ -96,12 +97,12 @@ exports.getPurchaseOrder = async (req, res, next) => {
 // @access  Private
 exports.createPurchaseOrder = async (req, res, next) => {
   try {
-    // Get supplier details
-    const supplier = await Supplier.findOne({ _id: req.body.supplier, tenant: req.user.tenant });
-    if (!supplier) {
+    // Get customer (vendor) details
+    const customer = await Customer.findOne({ _id: req.body.customer, tenant: req.user.tenant });
+    if (!customer) {
       return res.status(404).json({
         success: false,
-        message: 'Supplier not found',
+        message: 'Customer not found',
       });
     }
 
@@ -125,10 +126,10 @@ exports.createPurchaseOrder = async (req, res, next) => {
     const purchaseOrder = await PurchaseOrder.create({
       ...req.body,
       items: enrichedItems,
-      supplierName: supplier.name,
-      supplierEmail: supplier.email,
-      supplierPhone: supplier.phone,
-      supplierGst: supplier.gstNumber,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone,
+      customerGst: customer.gstNumber,
       createdBy: req.user.id,
       tenant: req.user.tenant,
     });
@@ -164,15 +165,16 @@ exports.updatePurchaseOrder = async (req, res, next) => {
       });
     }
 
-    // Update supplier details if supplier changed
-    if (req.body.supplier && req.body.supplier !== purchaseOrder.supplier.toString()) {
-      const supplier = await Supplier.findOne({ _id: req.body.supplier, tenant: req.user.tenant });
-      if (supplier) {
-        req.body.supplierName = supplier.name;
-        req.body.supplierEmail = supplier.email;
-        req.body.supplierPhone = supplier.phone;
-        req.body.supplierGst = supplier.gstNumber;
+    // Update customer details if customer changed
+    if (req.body.customer && req.body.customer !== String(purchaseOrder.customer)) {
+      const customer = await Customer.findOne({ _id: req.body.customer, tenant: req.user.tenant });
+      if (!customer) {
+        return res.status(404).json({ success: false, message: 'Customer not found' });
       }
+      req.body.customerName = customer.name;
+      req.body.customerEmail = customer.email;
+      req.body.customerPhone = customer.phone;
+      req.body.customerGst = customer.gstNumber;
     }
 
     // Enrich items if provided
@@ -337,8 +339,7 @@ exports.receivePurchaseOrder = async (req, res, next) => {
           currentQuantity: received.quantity,
           costPerUnit: poItem.rate,
           warehouse: warehouseId || purchaseOrder.deliveryWarehouse,
-          supplier: purchaseOrder.supplier,
-          supplierName: purchaseOrder.supplierName,
+          supplierName: purchaseOrder.customerName,
           purchaseOrder: purchaseOrder._id,
           poNumber: purchaseOrder.poNumber,
           createdBy: req.user.id,
@@ -499,8 +500,9 @@ exports.getPurchaseOrderStats = async (req, res, next) => {
       { $match: { tenant: req.user.tenant, status: { $ne: 'cancelled' } } },
       {
         $group: {
-          _id: '$supplier',
-          supplierName: { $first: '$supplierName' },
+          _id: '$customer',
+          supplierName: { $first: '$customerName' },
+          customerName: { $first: '$customerName' },
           orderCount: { $sum: 1 },
           totalValue: { $sum: '$grandTotal' },
         },
@@ -551,11 +553,11 @@ exports.duplicatePurchaseOrder = async (req, res, next) => {
 
     // Create new PO without _id and with reset status
     const newPoData = {
-      supplier: originalPo.supplier,
-      supplierName: originalPo.supplierName,
-      supplierEmail: originalPo.supplierEmail,
-      supplierPhone: originalPo.supplierPhone,
-      supplierGst: originalPo.supplierGst,
+      customer: originalPo.customer,
+      customerName: originalPo.customerName,
+      customerEmail: originalPo.customerEmail,
+      customerPhone: originalPo.customerPhone,
+      customerGst: originalPo.customerGst,
       deliveryWarehouse: originalPo.deliveryWarehouse,
       deliveryAddress: originalPo.deliveryAddress,
       items: originalPo.items.map((item) => ({
