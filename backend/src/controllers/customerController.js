@@ -25,7 +25,26 @@ exports.getCustomers = async (req, res, next) => {
     const customers = await Customer.find(query)
       .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
       .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
+
+    // Invoice count / billed total per customer (invoices store the customer by name).
+    const invoiceStats = await Invoice.aggregate([
+      {
+        $match: {
+          tenant: req.user.tenant,
+          'customer.name': { $in: customers.map((c) => c.name) },
+          status: { $ne: 'cancelled' },
+        },
+      },
+      { $group: { _id: '$customer.name', totalInvoices: { $sum: 1 }, totalBilled: { $sum: '$grandTotal' } } },
+    ]);
+    const statsByName = new Map(invoiceStats.map((s) => [s._id, s]));
+    customers.forEach((c) => {
+      const s = statsByName.get(c.name);
+      c.totalInvoices = s?.totalInvoices || 0;
+      c.totalBilled = Math.round((s?.totalBilled || 0) * 100) / 100;
+    });
 
     res.status(200).json({
       success: true,

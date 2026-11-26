@@ -9,6 +9,9 @@ const iconBgColors = {
   danger: 'bg-gradient-to-br from-danger to-red-600',
   info: 'bg-gradient-to-br from-info to-sky-600',
   secondary: 'bg-gradient-to-br from-secondary-600 to-secondary-700',
+  gray: 'bg-gradient-to-br from-secondary-400 to-secondary-500',
+  grey: 'bg-gradient-to-br from-secondary-400 to-secondary-500',
+  default: 'bg-gradient-to-br from-secondary-400 to-secondary-500',
   // Support legacy bg-* classes
   'bg-primary': 'bg-gradient-to-br from-primary to-primary-600',
   'bg-success': 'bg-gradient-to-br from-success to-green-600',
@@ -34,13 +37,15 @@ const StatCard = ({
   const formatValue = (val) => {
     if (loading) return '—';
     if (val === null || val === undefined) return '—';
+    // Already-formatted text (e.g. '₹3,84,000') is shown as-is.
+    if (typeof val === 'string' && Number.isNaN(Number(val))) return val;
     if (format === 'currency') {
-      return `₹${Number(val).toLocaleString('en-IN')}`;
+      return `₹${Number(val).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
     }
     if (format === 'percentage') {
       return `${val}%`;
     }
-    return Number(val).toLocaleString('en-IN');
+    return Number(val).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   };
 
   const getTrendIcon = () => {
@@ -55,7 +60,8 @@ const StatCard = ({
     return 'text-danger-dark';
   };
 
-  const bgColor = iconBgColors[iconColor] || iconColor;
+  // Unknown names fall back to grey so the icon never renders on an invisible tile.
+  const bgColor = iconBgColors[iconColor] || (String(iconColor).startsWith('bg-') ? iconColor : iconBgColors.gray);
 
   const content = (
     <Card
@@ -63,9 +69,9 @@ const StatCard = ({
       hover={Boolean(href)}
       className={`group ${className}`}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-secondary-500 truncate">{title}</p>
+          <p className="text-sm font-medium text-secondary-500 leading-snug line-clamp-2" title={typeof title === 'string' ? title : undefined}>{title}</p>
           <p className={`text-2xl sm:text-3xl font-heading font-bold text-secondary mt-1.5 tabular-nums ${loading ? 'animate-pulse' : ''}`}>
             {prefix}
             {formatValue(value)}
@@ -87,7 +93,7 @@ const StatCard = ({
         </div>
         {Icon && (
           <div
-            className={`w-12 h-12 ${bgColor} rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg transition-transform group-hover:scale-105`}
+            className={`w-11 h-11 ${bgColor} rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg transition-transform group-hover:scale-105`}
           >
             <Icon className="w-6 h-6 text-white" />
           </div>

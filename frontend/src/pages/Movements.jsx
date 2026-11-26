@@ -218,11 +218,11 @@ const Movements = () => {
       <Card padding="md">
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex gap-4 flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1">
               <select
                 value={filters.type}
                 onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="select w-auto min-w-[140px]"
+                className="select w-full sm:w-auto sm:min-w-[140px]"
               >
                 <option value="">All Types</option>
                 {movementTypes.map(type => (
@@ -233,7 +233,7 @@ const Movements = () => {
               <select
                 value={filters.reason}
                 onChange={(e) => setFilters({ ...filters, reason: e.target.value })}
-                className="select w-auto min-w-[140px]"
+                className="select w-full sm:w-auto sm:min-w-[140px]"
               >
                 <option value="">All Reasons</option>
                 {movementReasons.map(reason => (
@@ -244,7 +244,7 @@ const Movements = () => {
               <select
                 value={filters.warehouse}
                 onChange={(e) => setFilters({ ...filters, warehouse: e.target.value })}
-                className="select w-auto min-w-[160px]"
+                className="select w-full sm:w-auto sm:min-w-[160px]"
               >
                 <option value="">All Warehouses</option>
                 {warehouses.map(wh => (

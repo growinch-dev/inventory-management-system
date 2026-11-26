@@ -418,7 +418,7 @@ const Transfers = () => {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
         {transferStatuses.slice(0, 6).map(status => (
           <StatCard
             key={status.value}
@@ -521,7 +521,7 @@ const Transfers = () => {
                       <Table.Cell>
                         <button
                           onClick={() => viewTransfer(transfer)}
-                          className="font-medium text-primary hover:text-primary-dark transition-colors"
+                          className="font-medium text-primary hover:text-primary-dark transition-colors whitespace-nowrap"
                         >
                           {transfer.transferNumber}
                         </button>

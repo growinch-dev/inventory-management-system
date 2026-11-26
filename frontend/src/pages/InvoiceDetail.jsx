@@ -28,6 +28,19 @@ const STATUS_CONFIG = {
 
 const InvoiceDetail = () => {
   const { tenant } = useAuthStore();
+
+  // Bank lines for the invoice, from Settings → Company → Bank details.
+  const getBankLines = () => {
+    const b = tenant?.bankDetails || {};
+    return [
+      b.accountName && `A/C Name: ${b.accountName}`,
+      b.bankName && `Bank: ${b.bankName}`,
+      b.accountNumber && `A/C No: ${b.accountNumber}`,
+      b.ifscCode && `IFSC: ${b.ifscCode}`,
+      b.branch && `Branch: ${b.branch}`,
+      b.upiId && `UPI: ${b.upiId}`,
+    ].filter(Boolean);
+  };
   const { id } = useParams();
   const navigate = useNavigate();
   const invoiceRef = useRef(null);
@@ -185,25 +198,25 @@ const InvoiceDetail = () => {
       doc.text(`Amount in words: ${invoice.amountInWords}`, 20, grandTotalY + 20);
     }
 
-    // Bank Details
+    // Bank Details (from Settings → Company; skipped when not filled in)
     const bankY = grandTotalY + 35;
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text('Bank Details:', 20, bankY);
-    doc.setTextColor(30, 41, 59);
-    doc.setFontSize(9);
-    doc.text('Bank: State Bank of India', 20, bankY + 6);
-    doc.text('A/C No: 1234567890', 20, bankY + 11);
-    doc.text('IFSC: SBIN0001234', 20, bankY + 16);
-    doc.text('Branch: Chandni Chowk, Delhi', 20, bankY + 21);
+    const bankLines = getBankLines();
+    if (bankLines.length) {
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text('Bank Details:', 20, bankY);
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(9);
+      bankLines.forEach((line, i) => doc.text(line, 20, bankY + 6 + i * 5));
+    }
 
     // Terms
-    if (invoice.terms) {
+    if (invoice.termsAndConditions || invoice.terms) {
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text('Terms & Conditions:', 20, bankY + 35);
       doc.setFontSize(8);
-      doc.text(invoice.terms, 20, bankY + 41);
+      doc.text(doc.splitTextToSize(invoice.termsAndConditions || invoice.terms, 170), 20, bankY + 41);
     }
 
     // Footer
@@ -423,17 +436,20 @@ const InvoiceDetail = () => {
         {/* Bank Details & Terms */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-200">
           <div>
-            <h3 className="font-semibold text-secondary mb-2">Bank Details</h3>
-            <p className="text-gray-600 text-sm">Bank: State Bank of India</p>
-            <p className="text-gray-600 text-sm">A/C No: 1234567890</p>
-            <p className="text-gray-600 text-sm">IFSC: SBIN0001234</p>
-            <p className="text-gray-600 text-sm">Branch: Chandni Chowk, Delhi</p>
+            {getBankLines().length > 0 && (
+              <>
+                <h3 className="font-semibold text-secondary mb-2">Bank Details</h3>
+                {getBankLines().map((line) => (
+                  <p key={line} className="text-gray-600 text-sm">{line}</p>
+                ))}
+              </>
+            )}
           </div>
           <div>
-            {invoice.terms && (
+            {(invoice.termsAndConditions || invoice.terms) && (
               <>
                 <h3 className="font-semibold text-secondary mb-2">Terms & Conditions</h3>
-                <p className="text-gray-600 text-sm">{invoice.terms}</p>
+                <p className="text-gray-600 text-sm whitespace-pre-line">{invoice.termsAndConditions || invoice.terms}</p>
               </>
             )}
           </div>

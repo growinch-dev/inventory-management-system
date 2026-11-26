@@ -260,7 +260,7 @@ tenderSchema.index({ 'organization.name': 'text', title: 'text' });
 // Virtual for total pending supply value
 tenderSchema.virtual('pendingSupplyValue').get(function() {
   if (!this.items || this.items.length === 0) return 0;
-  return this.items.reduce((total, item) => {
+  return (this.items || []).reduce((total, item) => {
     const pending = (item.quantity || 0) - (item.deliveredQuantity || 0);
     return total + (pending * (item.unitPrice || 0));
   }, 0);
@@ -269,7 +269,7 @@ tenderSchema.virtual('pendingSupplyValue').get(function() {
 // Virtual for total delivered value
 tenderSchema.virtual('deliveredValue').get(function() {
   if (!this.items || this.items.length === 0) return 0;
-  return this.items.reduce((total, item) => {
+  return (this.items || []).reduce((total, item) => {
     return total + ((item.deliveredQuantity || 0) * (item.unitPrice || 0));
   }, 0);
 });

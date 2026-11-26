@@ -205,17 +205,17 @@ purchaseOrderSchema.index({ poDate: -1 });
 
 // Virtual for total items
 purchaseOrderSchema.virtual('totalItems').get(function () {
-  return this.items.reduce((sum, item) => sum + item.quantity, 0);
+  return (this.items || []).reduce((sum, item) => sum + item.quantity, 0);
 });
 
 // Virtual for total received items
 purchaseOrderSchema.virtual('totalReceivedItems').get(function () {
-  return this.items.reduce((sum, item) => sum + (item.receivedQuantity || 0), 0);
+  return (this.items || []).reduce((sum, item) => sum + (item.receivedQuantity || 0), 0);
 });
 
 // Virtual for pending items
 purchaseOrderSchema.virtual('pendingItems').get(function () {
-  return this.items.reduce(
+  return (this.items || []).reduce(
     (sum, item) => sum + (item.quantity - (item.receivedQuantity || 0)),
     0
   );

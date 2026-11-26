@@ -52,7 +52,7 @@ exports.updateTenant = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Organization not found' });
     }
 
-    const { name, email, phone, address, gstNumber, panNumber, settings } = req.body;
+    const { name, email, phone, address, gstNumber, panNumber, settings, bankDetails } = req.body;
 
     if (name !== undefined) tenant.name = name;
     if (email !== undefined) tenant.email = email;
@@ -60,6 +60,12 @@ exports.updateTenant = async (req, res, next) => {
     if (gstNumber !== undefined) tenant.gstNumber = gstNumber;
     if (panNumber !== undefined) tenant.panNumber = panNumber;
     if (address !== undefined) tenant.address = { ...tenant.address?.toObject?.(), ...address };
+    if (bankDetails && typeof bankDetails === 'object') {
+      const keys = ['bankName', 'accountName', 'accountNumber', 'ifscCode', 'branch', 'upiId'];
+      const current = tenant.bankDetails?.toObject?.() || {};
+      for (const k of keys) if (bankDetails[k] !== undefined) current[k] = String(bankDetails[k]).trim();
+      tenant.bankDetails = current;
+    }
 
     if (settings && typeof settings === 'object') {
       // Validate logo (base64 data URL) size.

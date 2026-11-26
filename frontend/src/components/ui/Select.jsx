@@ -8,6 +8,8 @@ const Select = forwardRef(({
   options = [],
   placeholder = 'Select an option',
   className = '',
+  selectClassName = '',
+  children,
   required = false,
   size = 'md',
   ...props
@@ -24,8 +26,11 @@ const Select = forwardRef(({
     lg: 20,
   };
 
+  // Full width by default, unless the caller sets its own width (e.g. "w-28", "md:w-40").
+  const hasWidth = /(^|\s)(sm:|md:|lg:)?(w-|flex-1)/.test(className);
+
   return (
-    <div className="w-full">
+    <div className={`${hasWidth ? '' : 'w-full'} ${className}`}>
       {label && (
         <label className="block text-sm font-medium text-secondary mb-1.5">
           {label}
@@ -44,26 +49,26 @@ const Select = forwardRef(({
               : 'border-secondary-200 focus:border-primary focus:ring-2 focus:ring-primary/20'
             }
             disabled:bg-secondary-50 disabled:text-secondary-400 disabled:cursor-not-allowed
-            ${className}
+            ${selectClassName}
           `}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${props.id || props.name}-error` : helperText ? `${props.id || props.name}-helper` : undefined}
           {...props}
         >
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
+          {children ?? (
+            <>
+              {(placeholder || options.length === 0) && (
+                <option value="" disabled={!!placeholder && options.length > 0}>
+                  {placeholder || 'Select...'}
+                </option>
+              )}
+              {options.map((option) => (
+                <option key={option.value} value={option.value} disabled={option.disabled}>
+                  {option.label}
+                </option>
+              ))}
+            </>
           )}
-          {options.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </option>
-          ))}
         </select>
         <ChevronDown
           size={iconSizes[size]}

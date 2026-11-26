@@ -157,7 +157,7 @@ exports.getMe = async (req, res, next) => {
     let tenant = null;
     if (user.tenant) {
       tenant = await Tenant.findById(user.tenant).select(
-        'name slug email subscription limits usage settings onboarding'
+        'name slug email phone address gstNumber panNumber bankDetails businessType subscription limits usage settings onboarding'
       );
     }
 

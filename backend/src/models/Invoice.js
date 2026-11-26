@@ -196,7 +196,10 @@ invoiceSchema.pre('validate', async function() {
         $lt: new Date(year + 1, 0, 1),
       },
     });
-    this.invoiceNumber = `MSC/${year}-${month}/${String(count + 1).padStart(4, '0')}`;
+    const Tenant = mongoose.model('Tenant');
+    const t = await Tenant.findById(this.tenant).select('settings.invoicePrefix').lean();
+    const prefix = (t?.settings?.invoicePrefix || 'INV').trim().toUpperCase();
+    this.invoiceNumber = `${prefix}/${year}-${month}/${String(count + 1).padStart(4, '0')}`;
   }
 });
 

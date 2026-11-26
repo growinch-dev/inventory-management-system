@@ -10,9 +10,10 @@
  *   node src/seeds/seedSbrDemo.js                       # organization named "SBR"
  *   SEED_TENANT_NAME="My Co" node src/seeds/seedSbrDemo.js
  *
- * Safe to re-run: everything it creates is tagged (SKU prefix SBR-, emails
- * @sbr-demo.example, notes containing DEMO_TAG, warehouse codes below) and is
- * removed before re-inserting. Data you entered yourself is never touched.
+ * Safe to re-run: everything it creates is identifiable (SKU prefix SBR-, emails
+ * @sbr-demo.example, warehouse codes below, and records linked to those demo
+ * products/customers) and is removed before re-inserting. Nothing visible in
+ * the app is tagged, and data you entered yourself is never touched.
  */
 const dns = require('dns');
 const path = require('path');
@@ -43,11 +44,11 @@ const StockMovement = require('../models/StockMovement');
 const Investment = require('../models/Investment');
 const SalaryPayment = require('../models/SalaryPayment');
 const Notification = require('../models/Notification');
+const Expense = require('../models/Expense');
 const QRScan = require('../models/QRScan');
 const numberToWords = require('../utils/numberToWords');
 
 const TENANT_NAME = process.env.SEED_TENANT_NAME || 'SBR';
-const DEMO_TAG = '[SBR demo seed]';
 const SKU = 'SBR-';
 const MAIL = '@sbr-demo.example';
 const WH_CODES = ['KVP', 'TUT', 'TVL', 'SVK'];
@@ -61,7 +62,6 @@ const daysAgo = (d, hour = 10) => {
 const daysAhead = (d) => new Date(Date.now() + d * DAY);
 const round2 = (n) => Math.round(n * 100) / 100;
 const addr = (street, city, pincode, state = 'Tamil Nadu') => ({ street, city, state, pincode, country: 'India' });
-const tagRegex = { $regex: DEMO_TAG.replace(/[[\]]/g, '\\$&') };
 
 // Mongoose leaves stray single-field unique indexes in place after the schema
 // drops them. These two block a second organization from reusing category
@@ -76,27 +76,62 @@ async function dropStrayGlobalIndexes() {
   }
 }
 
+const STAFF = [
+  ['Karthik R', 'Plant Manager', 32000], ['Selvi K', 'Accountant', 22000], ['Murugan S', 'Machine Operator', 16000],
+  ['Muthu Kumar P', 'Depot In-charge', 17000], ['Lakshmi M', 'Quality Chemist', 20000], ['Ramesh V', 'Sales Executive', 18000],
+  ['Selvam A', 'Driver', 15000], ['Pandi T', 'Helper', 12000],
+];
+const SALARY_MONTHS = [['2026-09', 57], ['2026-10', 26]];
+const INVESTMENT_REFS = [
+  'Initial share capital',
+  'MSME term loan – RO plant & blow moulding machine',
+  'Working capital top-up',
+  'Purchase of 300 new 20L jars',
+];
+const TENDER_CONTACT = `tenders${MAIL}`;
+// [daysAgo, category, description, amount, vendor, paymentMode, billNumber]
+const EXPENSES = [
+  [55, 'electricity', 'TANGEDCO electricity bill – October (plant HT connection)', 48600, 'TANGEDCO, Kovilpatti', 'online', 'EB-10-2026'],
+  [52, 'rent', 'Plant shed rent – October', 35000, 'SIDCO Estate Office', 'bank_transfer', 'RENT-10'],
+  [45, 'transport', 'Diesel for delivery vehicles – October', 22400, 'Indian Oil Bunk, Ettayapuram Road', 'upi', 'IOC-7781'],
+  [40, 'maintenance', 'Blow moulding machine servicing', 12500, 'Sri Balaji Engineering Works', 'cash', 'SBEW-221'],
+  [33, 'professional', 'Water testing – NABL lab (monthly BIS sample)', 6500, 'Madurai Water Testing Lab', 'bank_transfer', 'MWTL-1043'],
+  [26, 'electricity', 'TANGEDCO electricity bill – November (plant HT connection)', 51200, 'TANGEDCO, Kovilpatti', 'online', 'EB-11-2026'],
+  [24, 'rent', 'Plant shed rent – November', 35000, 'SIDCO Estate Office', 'bank_transfer', 'RENT-11'],
+  [18, 'transport', 'Diesel for delivery vehicles – November (1st half)', 11800, 'Indian Oil Bunk, Ettayapuram Road', 'upi', 'IOC-7902'],
+  [12, 'maintenance', 'RO membrane cleaning chemicals & labour', 8200, 'Aqua RO Systems', 'cash', 'ARO-556'],
+  [9, 'marketing', 'Flex banners & dealer stickers', 4800, 'Sivakasi Offset Printers', 'upi', 'SOP-889'],
+  [6, 'communication', 'Mobile & internet – office and drivers', 2400, 'BSNL / Airtel', 'online', 'TEL-11'],
+  [3, 'transport', 'Diesel for delivery vehicles – November (2nd half)', 12600, 'Indian Oil Bunk, Ettayapuram Road', 'upi', 'IOC-8015'],
+  [1, 'office', 'Stationery, invoice books and printer toner', 1850, 'Kovilpatti Stationery Mart', 'cash', 'KSM-302'],
+];
+
 async function cleanPrevious(tenant) {
   const productIds = (await Product.find({ tenant, sku: { $regex: `^${SKU}` } }, '_id')).map((p) => p._id);
+  const demoCustomers = await Customer.find({ tenant, email: { $regex: `${MAIL}$` } }, '_id name');
+  const customerIds = demoCustomers.map((c) => c._id);
+  const customerNames = demoCustomers.map((c) => c.name);
   await Promise.all([
-    Invoice.deleteMany({ tenant, notes: tagRegex }),
-    Payment.deleteMany({ tenant, internalNotes: tagRegex }),
-    PurchaseOrder.deleteMany({ tenant, internalNotes: tagRegex }),
-    DeliveryChallan.deleteMany({ tenant, internalNotes: tagRegex }),
-    DemoIssue.deleteMany({ tenant, internalNotes: tagRegex }),
-    Tender.deleteMany({ tenant, notes: tagRegex }),
-    Transfer.deleteMany({ tenant, notes: tagRegex }),
-    Production.deleteMany({ tenant, notes: tagRegex }),
+    Invoice.deleteMany({ tenant, 'customer.email': { $regex: `${MAIL}$` } }),
+    Payment.deleteMany({ tenant, 'party.email': { $regex: `${MAIL}$` } }),
+    PurchaseOrder.deleteMany({ tenant, customer: { $in: customerIds } }),
+    DeliveryChallan.deleteMany({ tenant, 'consignee.name': { $in: customerNames }, 'items.product': { $in: productIds } }),
+    DemoIssue.deleteMany({ tenant, customer: { $in: customerIds } }),
+    Tender.deleteMany({ tenant, 'organization.contactEmail': TENDER_CONTACT }),
+    Tender.deleteMany({ tenant, notes: '[SBR demo seed]' }), // records from the first version of this seed
+    Transfer.deleteMany({ tenant, 'items.product': { $in: productIds } }),
+    Production.deleteMany({ tenant, product: { $in: productIds } }),
     Batch.deleteMany({ tenant, product: { $in: productIds } }),
     StockMovement.deleteMany({ tenant, product: { $in: productIds } }),
     QRScan.deleteMany({ tenant, product: { $in: productIds } }),
-    Investment.deleteMany({ tenant, notes: tagRegex }),
-    SalaryPayment.deleteMany({ tenant, notes: tagRegex }),
+    Investment.deleteMany({ tenant, reference: { $in: INVESTMENT_REFS } }),
+    SalaryPayment.deleteMany({ tenant, employeeName: { $in: STAFF.map((x) => x[0]) }, month: { $in: SALARY_MONTHS.map((m) => m[0]) } }),
     Notification.deleteMany({ tenant, 'metadata.demoSeed': true }),
-    Customer.deleteMany({ tenant, email: { $regex: `${MAIL}$` } }),
+    Expense.deleteMany({ tenant, description: { $in: EXPENSES.map((e) => e[2]) } }),
     Supplier.deleteMany({ tenant, email: { $regex: `${MAIL}$` } }),
   ]);
-  await Product.deleteMany({ tenant, sku: { $regex: `^${SKU}` } });
+  await Customer.deleteMany({ tenant, _id: { $in: customerIds } });
+  await Product.deleteMany({ tenant, _id: { $in: productIds } });
   await Warehouse.deleteMany({ tenant, code: { $in: WH_CODES } });
 }
 
@@ -147,7 +182,7 @@ async function seed() {
       address: addr('Sattur Main Road', 'Sivakasi', '626123'),
       contactPerson: { name: 'Ramesh V', phone: '9840011204' }, capacity: { maxItems: 8000 },
       zones: [{ code: 'FG', name: 'Finished Goods', type: 'storage' }] },
-  ].map((w) => ({ ...w, tenant, createdBy: by, notes: DEMO_TAG })));
+  ].map((w) => ({ ...w, tenant, createdBy: by })));
   const [whMain, whTut, whTvl, whSvk] = warehouses;
   console.log(`✅ Warehouses: ${warehouses.length}`);
 
@@ -196,7 +231,7 @@ async function seed() {
     { sku: 'RM-PF90', name: 'PET Preform 90g (5 Litre)', category: 'raw_material_preforms', unit: 'PCS', cost: 8.5, stock: 2600, reorderLevel: 1000 },
     { sku: 'RM-CAP28', name: 'Bottle Cap 28mm PCO (Blue)', category: 'raw_material_caps', unit: 'PCS', cost: 0.32, stock: 160000, reorderLevel: 50000 },
     { sku: 'RM-CAP20L', name: '20L Can Cap with Seal', category: 'raw_material_caps', unit: 'PCS', cost: 2.2, stock: 4200, reorderLevel: 2000 },
-    { sku: 'RM-LBL', name: 'BOPP Label Roll (approx. 5,000 labels)', category: 'raw_material_labels', unit: 'ROLL', cost: 850, stock: 64, reorderLevel: 20 },
+    { sku: 'RM-LBL', name: 'BOPP Printed Label', category: 'raw_material_labels', unit: 'PCS', cost: 0.17, stock: 320000, reorderLevel: 100000 },
     { sku: 'RM-SHR', name: 'Shrink Wrap Film', category: 'raw_material_packaging', unit: 'KG', cost: 155, stock: 420, reorderLevel: 150 },
     { sku: 'RM-CTN', name: 'Corrugated Carton / Tray', category: 'raw_material_packaging', unit: 'BOX', cost: 9, stock: 5200, reorderLevel: 1500 },
     { sku: 'RM-JAR20', name: '20L PC Jar (Empty)', category: 'raw_material_jars', unit: 'PCS', cost: 165, stock: 900, reorderLevel: 300 },
@@ -240,7 +275,7 @@ async function seed() {
     email: `${s.name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '')}${MAIL}`,
     phone: `98430${String(21000 + i * 111).padStart(5, '0')}`,
     address: addr(s.street, s.city, s.pincode), paymentTerms: s.terms, rating: s.rating,
-    notes: `Raw material supplier. ${DEMO_TAG}`,
+    notes: 'Raw material supplier.',
   })));
   console.log(`✅ Suppliers: ${suppliers.length}`);
 
@@ -274,12 +309,12 @@ async function seed() {
     ...vendorDefs.map((v, i) => ({
       name: v.name, customerType: 'corporate', creditLimit: 0, phone: `98430${String(41000 + i * 97).padStart(5, '0')}`,
       billingAddress: addr(v.street, v.city, v.pincode), shippingAddress: addr(v.street, v.city, v.pincode),
-      notes: `Vendor (raw material supplier). ${DEMO_TAG}`,
+      notes: 'Vendor (raw material supplier).',
     })),
   ].map((c) => ({
     ...c, tenant, createdBy: by, isActive: true,
     email: `${c.name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '')}${MAIL}`,
-    notes: c.notes || DEMO_TAG,
+    notes: c.notes,
   })));
   const C = Object.fromEntries(customers.map((c) => [c.name, c]));
   console.log(`✅ Customers: ${customerDefs.length} customers + ${vendorDefs.length} vendors`);
@@ -311,7 +346,7 @@ async function seed() {
       confirmedBy: d.status !== 'draft' ? by : undefined, confirmedAt: d.status !== 'draft' ? daysAgo(d.day) : undefined,
       receivedBy: received ? by : undefined, receivedAt: received ? daysAgo(d.day - 4) : undefined,
       paymentStatus: d.paid, paymentMethod: 'bank_transfer', paymentDueDate: daysAgo(d.day - 30),
-      notes: 'Deliver to Kovilpatti plant, raw material store.', internalNotes: DEMO_TAG,
+      notes: 'Deliver to Kovilpatti plant, raw material store.',
     });
     await po.save();
     if (d.paid !== 'pending') {
@@ -333,11 +368,11 @@ async function seed() {
   // ---------------------------------------------------------------- Production
   // Bill of materials per unit of finished good.
   const bom = {
-    'FG-300': [['RM-PF13', 24], ['RM-CAP28', 24], ['RM-LBL', 24 / 5000], ['RM-CTN', 1], ['RM-SHR', 0.05]],
-    'FG-500': [['RM-PF18', 24], ['RM-CAP28', 24], ['RM-LBL', 24 / 5000], ['RM-CTN', 1], ['RM-SHR', 0.06]],
-    'FG-1L': [['RM-PF28', 12], ['RM-CAP28', 12], ['RM-LBL', 12 / 5000], ['RM-CTN', 1], ['RM-SHR', 0.06]],
-    'FG-2L': [['RM-PF42', 9], ['RM-CAP28', 9], ['RM-LBL', 9 / 5000], ['RM-CTN', 1], ['RM-SHR', 0.07]],
-    'FG-5L': [['RM-PF90', 1], ['RM-LBL', 1 / 5000]],
+    'FG-300': [['RM-PF13', 24], ['RM-CAP28', 24], ['RM-LBL', 24], ['RM-CTN', 1], ['RM-SHR', 0.05]],
+    'FG-500': [['RM-PF18', 24], ['RM-CAP28', 24], ['RM-LBL', 24], ['RM-CTN', 1], ['RM-SHR', 0.06]],
+    'FG-1L': [['RM-PF28', 12], ['RM-CAP28', 12], ['RM-LBL', 12], ['RM-CTN', 1], ['RM-SHR', 0.06]],
+    'FG-2L': [['RM-PF42', 9], ['RM-CAP28', 9], ['RM-LBL', 9], ['RM-CTN', 1], ['RM-SHR', 0.07]],
+    'FG-5L': [['RM-PF90', 1], ['RM-LBL', 1]],
     'FG-20L': [['RM-CAP20L', 1]],
   };
   const shelfLifeDays = { 'FG-20L': 30 };
@@ -371,7 +406,7 @@ async function seed() {
     const batchNumber = `SBR-${fg.replace('FG-', '')}-${date.toISOString().slice(2, 10).replace(/-/g, '')}`;
     const good = produced - rejected;
     const mats = produced > 0 ? bom[fg].map(([sku, per]) => {
-      const qty = round2(per * produced);
+      const qty = Math.round(per * produced); // whole units / kg
       return { material: P[sku]._id, quantityUsed: qty, unit: P[sku].unit, cost: round2(qty * P[sku].costPrice) };
     }) : [];
     const materialCost = round2(mats.reduce((s, m) => s + m.cost, 0));
@@ -387,7 +422,7 @@ async function seed() {
       warehouse: whMain._id, storageLocation: 'FG Bay',
       productionCost: { materialCost, laborCost, overheadCost, totalCost: round2(materialCost + laborCost + overheadCost) },
       status, startTime: produced > 0 ? date : undefined, endTime: status === 'completed' ? new Date(date.getTime() + 7 * 3600 * 1000) : undefined,
-      notes: `${status === 'cancelled' ? 'Cancelled: blow moulding machine maintenance. ' : ''}${DEMO_TAG}`,
+      notes: status === 'cancelled' ? 'Cancelled: blow moulding machine under maintenance.' : undefined,
     });
     productions.push(prod);
     if (produced > 0) {
@@ -462,7 +497,7 @@ async function seed() {
       stockDeducted: deducted, stockDeductedAt: deducted ? date : undefined,
       paymentMethod: method, paymentDate: status === 'paid' ? new Date(date.getTime() + 3 * DAY) : undefined,
       termsAndConditions: '1. Goods once sold will not be taken back.\n2. Empty 20L cans remain the property of the company.\n3. Subject to Kovilpatti jurisdiction.\n4. E. & O.E.',
-      notes: `Thank you for your business. ${DEMO_TAG}`,
+      notes: 'Thank you for your business.',
     });
     invoices.push(inv);
     if (deducted) {
@@ -482,7 +517,7 @@ async function seed() {
         chequeDetails: payMethod === 'cheque' ? { chequeNumber: `0${450000 + d}`, chequeDate: date, bankName: 'Indian Bank', status: 'cleared', clearedDate: new Date(date.getTime() + 3 * DAY) } : undefined,
         transactionReference: payMethod === 'bank_transfer' ? `NEFT${inv._id.toString().slice(-8).toUpperCase()}` : undefined,
         status: 'completed', invoiceAmount: grandTotal, previouslyPaid: 0, balanceAfterPayment: round2(grandTotal - paid),
-        receiptGenerated: true, internalNotes: DEMO_TAG,
+        receiptGenerated: true,
       });
       payments.push(pay);
     }
@@ -501,7 +536,7 @@ async function seed() {
       party: { type: 'supplier', name: po.customerName, email: po.customerEmail, phone: po.customerPhone },
       paymentType: 'made', paymentDate: new Date(po.poDate.getTime() + 10 * DAY), amount: po.paidAmount, paymentMethod: 'neft',
       bankDetails: { bankName: 'Indian Overseas Bank', branchName: 'Kovilpatti' }, transactionReference: `NEFT${po._id.toString().slice(-8).toUpperCase()}`,
-      status: 'completed', invoiceAmount: po.grandTotal, balanceAfterPayment: round2(po.grandTotal - po.paidAmount), internalNotes: DEMO_TAG,
+      status: 'completed', invoiceAmount: po.grandTotal, balanceAfterPayment: round2(po.grandTotal - po.paidAmount),
     }));
   }
   console.log(`✅ Invoices: ${invoices.length}  Payments: ${payments.length}`);
@@ -538,7 +573,6 @@ async function seed() {
       stockDeducted: d.type !== 'non_returnable', stockDeductedAt: d.type !== 'non_returnable' ? date : undefined,
       purpose: d.purpose || 'Delivery against tax invoice.',
       receivedBy: d.status === 'delivered' ? 'Store in-charge' : undefined, acknowledgmentReceived: d.status === 'delivered',
-      internalNotes: DEMO_TAG,
     });
     challans.push(ch);
     if (d.type !== 'non_returnable') {
@@ -571,7 +605,6 @@ async function seed() {
       returnInfo: d.returned ? { receivedDate: daysAgo(d.ret + 1), receivedBy: by, overallCondition: 'good', notes: 'Empty cans returned in good condition.' } : undefined,
       followUpRequired: !d.returned, followUpDate: d.returned ? undefined : daysAhead(2), conversionStatus: d.conv,
       customerFeedback: d.returned ? 'Good taste and timely delivery. Signed monthly contract.' : undefined,
-      internalNotes: DEMO_TAG,
     });
     demos.push(demo);
     d.items.forEach(([sku, q]) => {
@@ -591,7 +624,7 @@ async function seed() {
   for (const d of tenderDefs) {
     tenders.push(await Tender.create({
       tenant, createdBy: by, assignedTo: by, title: d.title, description: d.title,
-      organization: { name: d.org, type: 'government', address: 'Tamil Nadu', contactPerson: 'Superintendent', contactPhone: '04632220000' },
+      organization: { name: d.org, type: 'government', address: 'Tamil Nadu', contactPerson: 'Superintendent', contactPhone: '04632220000', contactEmail: TENDER_CONTACT },
       customer: d.cust ? C[d.cust]._id : undefined,
       publishDate: daysAgo(Math.max(d.deadline * -1, 0) + 20), submissionDeadline: d.deadline < 0 ? daysAgo(-d.deadline) : daysAhead(d.deadline),
       openingDate: d.deadline < 0 ? daysAgo(-d.deadline - 2) : daysAhead(d.deadline + 2),
@@ -601,7 +634,6 @@ async function seed() {
       items: d.items.map(([sku, q, price]) => ({ product: P[sku]._id, description: P[sku].name, quantity: q, unitPrice: price, totalPrice: q * price, pendingQuantity: q })),
       status: d.status, priority: d.priority, category: 'consumables', source: 'tntenders.gov.in',
       referenceNumber: `TN/${d.org.split(' ')[0].toUpperCase()}/2026/${100 + tenders.length}`,
-      notes: DEMO_TAG,
     }));
   }
   console.log(`✅ Tenders: ${tenders.length}`);
@@ -625,7 +657,6 @@ async function seed() {
       requestedDate: date, expectedDeliveryDate: new Date(date.getTime() + DAY),
       shippedDate: d.status !== 'pending' ? date : undefined, receivedDate: done ? new Date(date.getTime() + DAY) : undefined,
       trackingInfo: d.status !== 'pending' ? { carrier: 'Own vehicle', vehicleNumber: 'TN 69 BC 7781', driverName: 'Kannan', driverPhone: '9840011298' } : undefined,
-      notes: DEMO_TAG,
     });
     transfers.push(tr);
     if (d.status !== 'pending') {
@@ -664,7 +695,6 @@ async function seed() {
       initialQuantity: b.good, currentQuantity: b.current, costPerUnit: b.cost,
       warehouse: whMain._id, warehouseName: whMain.name, location: { zone: 'FG' },
       qualityCheck: { passed: true, checkedBy: by, checkedAt: b.date, notes: 'TDS, pH and microbiology within BIS limits.' },
-      notes: DEMO_TAG,
     }).save());
   }
   // Raw-material batch with expiry (chemical) from a PO.
@@ -672,7 +702,7 @@ async function seed() {
     tenant, createdBy: by, product: P['RM-ANT']._id, productName: P['RM-ANT'].name, productSku: P['RM-ANT'].sku,
     batchNumber: 'ANT-2609-17', manufacturingDate: daysAgo(70), expiryDate: daysAhead(22), receivedDate: daysAgo(45),
     initialQuantity: 120, currentQuantity: 85, costPerUnit: 210, warehouse: whMain._id, warehouseName: whMain.name,
-    supplier: suppliers[4]._id, supplierName: suppliers[4].name, notes: DEMO_TAG,
+    supplier: suppliers[4]._id, supplierName: suppliers[4].name,
   }).save());
   console.log(`✅ Batches: ${createdBatches.length}`);
 
@@ -706,32 +736,37 @@ async function seed() {
   // ---------------------------------------------------------------- QR scans
   const scans = [['FG-20L', 'stock_out', 40], ['FG-500', 'verify', 0], ['FG-1L', 'view', 0], ['RM-PF18', 'stock_in', 0], ['FG-300', 'location_update', 0]];
   await QRScan.create(scans.map(([sku, action, quantity], i) => ({
-    tenant, product: P[sku]._id, action, quantity, scannedBy: by, device: 'Android – dispatch scanner', notes: DEMO_TAG,
+    tenant, product: P[sku]._id, action, quantity, scannedBy: by, device: 'Android – dispatch scanner',
     location: { latitude: 9.1717 + i * 0.001, longitude: 77.8698 },
   })));
   console.log(`✅ QR scans: ${scans.length}`);
 
   // ---------------------------------------------------------------- Investments & salaries
   const investments = await Investment.create([
-    { date: daysAgo(230), investorName: 'Promoter Capital', type: 'capital', amount: 2500000, mode: 'bank_transfer', reference: 'Initial share capital' },
-    { date: daysAgo(200), investorName: 'Indian Overseas Bank (Term Loan)', type: 'loan', amount: 1500000, mode: 'bank_transfer', reference: 'MSME term loan – RO plant & blow moulding machine' },
-    { date: daysAgo(95), investorName: 'Promoter Contribution', type: 'owner_contribution', amount: 300000, mode: 'upi', reference: 'Working capital top-up' },
-    { date: daysAgo(18), investorName: 'Promoter Contribution', type: 'owner_contribution', amount: 150000, mode: 'cheque', reference: 'Purchase of 300 new 20L jars' },
-  ].map((i) => ({ ...i, tenant, createdBy: by, notes: DEMO_TAG })));
-  const staff = [
-    ['Karthik R', 'Plant Manager', 32000], ['Selvi K', 'Accountant', 22000], ['Murugan S', 'Machine Operator', 16000],
-    ['Muthu Kumar P', 'Depot In-charge', 17000], ['Lakshmi M', 'Quality Chemist', 20000], ['Ramesh V', 'Sales Executive', 18000],
-    ['Selvam A', 'Driver', 15000], ['Pandi T', 'Helper', 12000],
-  ];
+    { date: daysAgo(230), investorName: 'Promoter Capital', type: 'capital', amount: 2500000, mode: 'bank_transfer', reference: INVESTMENT_REFS[0] },
+    { date: daysAgo(200), investorName: 'Indian Overseas Bank (Term Loan)', type: 'loan', amount: 1500000, mode: 'bank_transfer', reference: INVESTMENT_REFS[1] },
+    { date: daysAgo(95), investorName: 'Promoter Contribution', type: 'owner_contribution', amount: 300000, mode: 'upi', reference: INVESTMENT_REFS[2] },
+    { date: daysAgo(18), investorName: 'Promoter Contribution', type: 'owner_contribution', amount: 150000, mode: 'cheque', reference: INVESTMENT_REFS[3] },
+  ].map((i) => ({ ...i, tenant, createdBy: by })));
   const salaryDocs = [];
-  for (const [month, day] of [['2026-09', 57], ['2026-10', 26]]) {
-    staff.forEach(([name, designation, amount], i) => salaryDocs.push({
+  for (const [month, day] of SALARY_MONTHS) {
+    STAFF.forEach(([name, designation, amount], i) => salaryDocs.push({
       tenant, createdBy: by, date: daysAgo(day), employeeName: name, designation, month, amount,
-      mode: i % 3 === 0 ? 'bank_transfer' : i % 3 === 1 ? 'upi' : 'cash', reference: `Salary ${month}`, notes: DEMO_TAG,
+      mode: i % 3 === 0 ? 'bank_transfer' : i % 3 === 1 ? 'upi' : 'cash', reference: `Salary ${month}`,
     }));
   }
   await SalaryPayment.create(salaryDocs);
   console.log(`✅ Investments: ${investments.length}  Salary payments: ${salaryDocs.length}`);
+
+  // ---------------------------------------------------------------- Expenses
+  for (const [d, category, description, amount, vendor, paymentMode, billNumber] of EXPENSES) {
+    await Expense.create({
+      tenant, createdBy: by, expenseDate: daysAgo(d), category, description, amount, totalAmount: amount,
+      vendor, paymentMode, paymentStatus: 'paid', paidAmount: amount, paymentDate: daysAgo(d), billNumber, billDate: daysAgo(d),
+      department: ['transport'].includes(category) ? 'distribution' : ['marketing'].includes(category) ? 'sales' : ['office', 'communication', 'rent'].includes(category) ? 'administration' : 'production',
+    });
+  }
+  console.log(`✅ Expenses: ${EXPENSES.length}`);
 
   // ---------------------------------------------------------------- Notifications
   const overdueInv = invoices.find((i) => i.status === 'overdue');

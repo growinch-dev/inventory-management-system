@@ -36,8 +36,29 @@ const Billing = () => {
         subscriptionsAPI.getCurrentSubscription(),
         subscriptionsAPI.getUsage(),
       ]);
-      setSubscription(subRes.data.data);
-      setUsage(usageRes.data.data);
+      // API: { plan: { id, name, price }, status, limits, subscription } -> flat shape used below
+      const d = subRes.data.data || {};
+      const cycle = d.subscription?.billingCycle || 'monthly';
+      setSubscription({
+        plan: typeof d.plan === 'string' ? d.plan : d.plan?.id || 'free',
+        planName: d.plan?.name,
+        status: d.status,
+        trialEndsAt: d.trialEndsAt,
+        currentPeriodEnd: d.currentPeriodEnd,
+        billingCycle: cycle,
+        price: typeof d.plan?.price === 'object' ? d.plan.price[cycle] : d.plan?.price,
+        features: d.limits?.features || {},
+      });
+      // Build { products: { used, limit } ... } from the tenant's usage counters and plan limits.
+      const lim = d.limits || {};
+      const use = d.usage || {};
+      setUsage({
+        products: { used: use.productsCount || 0, limit: lim.maxProducts ?? -1 },
+        users: { used: use.usersCount || 0, limit: lim.maxUsers ?? -1 },
+        invoices: { used: use.invoicesThisMonth || 0, limit: lim.maxInvoicesPerMonth ?? -1 },
+        warehouses: { used: use.warehousesCount || 0, limit: lim.maxWarehouses ?? -1 },
+      });
+      void usageRes;
 
       try {
         const paymentsRes = await subscriptionsAPI.getPaymentHistory();
@@ -125,7 +146,7 @@ const Billing = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-lg font-semibold text-secondary">
-                {subscription?.plan?.charAt(0).toUpperCase() + subscription?.plan?.slice(1)} Plan
+                {subscription?.planName || (subscription?.plan ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1) : 'Free')} Plan
               </h2>
               {getStatusBadge(subscription?.status)}
             </div>
@@ -151,7 +172,9 @@ const Billing = () => {
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-secondary">
-              {subscription?.price === 0 ? (
+              {typeof subscription?.price !== 'number' ? (
+                subscription?.plan === 'free' ? 'Free' : 'Custom'
+              ) : subscription?.price === 0 ? (
                 'Free'
               ) : (
                 <>₹{subscription?.price?.toLocaleString()}<span className="text-sm font-normal text-gray-500">/{subscription?.billingCycle}</span></>

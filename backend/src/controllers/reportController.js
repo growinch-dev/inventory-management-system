@@ -76,8 +76,8 @@ exports.getSalesReport = async (req, res, next) => {
           totalInvoices: { $sum: 1 },
           totalItems: { $sum: { $size: '$items' } },
           avgOrderValue: { $avg: '$grandTotal' },
-          totalTax: { $sum: '$taxAmount' },
-          totalDiscount: { $sum: '$discount' },
+          totalTax: { $sum: '$totalTax' },
+          totalDiscount: { $sum: '$discountAmount' },
         },
       },
     ]);
@@ -138,7 +138,7 @@ exports.getSalesReport = async (req, res, next) => {
       },
       {
         $group: {
-          _id: '$customer.id',
+          _id: '$customer.name',
           name: { $first: '$customer.name' },
           totalSpent: { $sum: '$grandTotal' },
           orderCount: { $sum: 1 },
@@ -161,10 +161,10 @@ exports.getSalesReport = async (req, res, next) => {
       {
         $group: {
           _id: '$items.product',
-          name: { $first: '$items.name' },
+          name: { $first: '$items.productName' },
           sku: { $first: '$items.sku' },
           totalQty: { $sum: '$items.quantity' },
-          totalRevenue: { $sum: '$items.total' },
+          totalRevenue: { $sum: '$items.totalAmount' },
         },
       },
       { $sort: { totalRevenue: -1 } },
@@ -193,7 +193,7 @@ exports.getSalesReport = async (req, res, next) => {
       {
         $group: {
           _id: '$product.category',
-          totalSales: { $sum: '$items.total' },
+          totalSales: { $sum: '$items.totalAmount' },
           quantity: { $sum: '$items.quantity' },
         },
       },
@@ -236,7 +236,7 @@ exports.getPurchaseReport = async (req, res, next) => {
       {
         $match: {
           tenant: req.user.tenant,
-          orderDate: { $gte: start, $lte: end },
+          poDate: { $gte: start, $lte: end },
           status: { $nin: ['cancelled', 'draft'] },
         },
       },
@@ -256,7 +256,7 @@ exports.getPurchaseReport = async (req, res, next) => {
       {
         $match: {
           tenant: req.user.tenant,
-          orderDate: { $gte: start, $lte: end },
+          poDate: { $gte: start, $lte: end },
         },
       },
       {
@@ -275,13 +275,13 @@ exports.getPurchaseReport = async (req, res, next) => {
       {
         $match: {
           tenant: req.user.tenant,
-          orderDate: { $gte: start, $lte: end },
+          poDate: { $gte: start, $lte: end },
           status: { $nin: ['cancelled', 'draft'] },
         },
       },
       {
         $group: {
-          _id: { $dateToString: { format: dateFormat, date: '$orderDate' } },
+          _id: { $dateToString: { format: dateFormat, date: '$poDate' } },
           purchases: { $sum: '$grandTotal' },
           orders: { $sum: 1 },
         },
@@ -294,14 +294,14 @@ exports.getPurchaseReport = async (req, res, next) => {
       {
         $match: {
           tenant: req.user.tenant,
-          orderDate: { $gte: start, $lte: end },
+          poDate: { $gte: start, $lte: end },
           status: { $nin: ['cancelled', 'draft'] },
         },
       },
       {
         $group: {
-          _id: '$supplier.id',
-          name: { $first: '$supplier.name' },
+          _id: '$customer',
+          name: { $first: '$customerName' },
           totalPurchased: { $sum: '$grandTotal' },
           orderCount: { $sum: 1 },
         },
@@ -390,14 +390,26 @@ exports.getPaymentReport = async (req, res, next) => {
       {
         $match: {
           tenant: req.user.tenant,
-          status: { $in: ['confirmed', 'dispatched', 'delivered'] },
-          'payment.balanceDue': { $gt: 0 },
+          status: { $in: ['confirmed', 'dispatched', 'delivered', 'overdue'] },
         },
       },
       {
+        $lookup: {
+          from: 'payments',
+          let: { invId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $and: [{ $eq: ['$referenceId', '$invId'] }, { $eq: ['$status', 'completed'] }] } } },
+            { $group: { _id: null, paid: { $sum: '$amount' } } },
+          ],
+          as: 'paid',
+        },
+      },
+      { $addFields: { balanceDue: { $subtract: ['$grandTotal', { $ifNull: [{ $first: '$paid.paid' }, 0] }] } } },
+      { $match: { balanceDue: { $gt: 0 } } },
+      {
         $group: {
           _id: null,
-          totalOutstanding: { $sum: '$payment.balanceDue' },
+          totalOutstanding: { $sum: '$balanceDue' },
           count: { $sum: 1 },
         },
       },
@@ -684,7 +696,7 @@ exports.getMovementReport = async (req, res, next) => {
     const { start, end } = getDateRange(range, startDate, endDate);
 
     const matchQuery = { tenant: req.user.tenant, createdAt: { $gte: start, $lte: end } };
-    if (type) matchQuery.movementType = type;
+    if (type) matchQuery.type = type;
     if (reason) matchQuery.reason = reason;
 
     // Movement summary
@@ -692,9 +704,9 @@ exports.getMovementReport = async (req, res, next) => {
       { $match: matchQuery },
       {
         $group: {
-          _id: '$movementType',
+          _id: '$type',
           count: { $sum: 1 },
-          totalQuantity: { $sum: { $abs: '$quantityChange' } },
+          totalQuantity: { $sum: { $abs: '$quantity' } },
         },
       },
     ]);
@@ -706,7 +718,7 @@ exports.getMovementReport = async (req, res, next) => {
         $group: {
           _id: '$reason',
           count: { $sum: 1 },
-          totalQuantity: { $sum: { $abs: '$quantityChange' } },
+          totalQuantity: { $sum: { $abs: '$quantity' } },
         },
       },
       { $sort: { count: -1 } },
@@ -719,10 +731,10 @@ exports.getMovementReport = async (req, res, next) => {
         $group: {
           _id: {
             date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            type: '$movementType',
+            type: '$type',
           },
           count: { $sum: 1 },
-          quantity: { $sum: { $abs: '$quantityChange' } },
+          quantity: { $sum: { $abs: '$quantity' } },
         },
       },
       { $sort: { '_id.date': 1 } },
@@ -736,10 +748,10 @@ exports.getMovementReport = async (req, res, next) => {
           _id: '$product',
           totalMovements: { $sum: 1 },
           totalIn: {
-            $sum: { $cond: [{ $eq: ['$movementType', 'in'] }, '$quantityChange', 0] },
+            $sum: { $cond: [{ $eq: ['$type', 'in'] }, '$quantity', 0] },
           },
           totalOut: {
-            $sum: { $cond: [{ $eq: ['$movementType', 'out'] }, { $abs: '$quantityChange' }, 0] },
+            $sum: { $cond: [{ $eq: ['$type', 'out'] }, { $abs: '$quantity' }, 0] },
           },
         },
       },
@@ -941,8 +953,8 @@ exports.getProfitLossReport = async (req, res, next) => {
         $group: {
           _id: null,
           totalRevenue: { $sum: '$grandTotal' },
-          totalTax: { $sum: '$taxAmount' },
-          totalDiscount: { $sum: '$discount' },
+          totalTax: { $sum: '$totalTax' },
+          totalDiscount: { $sum: '$discountAmount' },
         },
       },
     ]);
@@ -981,7 +993,7 @@ exports.getProfitLossReport = async (req, res, next) => {
       {
         $match: {
           tenant: req.user.tenant,
-          orderDate: { $gte: start, $lte: end },
+          poDate: { $gte: start, $lte: end },
           status: { $in: ['received', 'partial'] },
         },
       },

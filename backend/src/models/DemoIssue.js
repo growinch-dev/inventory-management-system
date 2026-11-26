@@ -207,13 +207,13 @@ demoIssueSchema.virtual('isOverdue').get(function() {
 // Virtual for total items
 demoIssueSchema.virtual('totalItems').get(function() {
   if (!this.items) return 0;
-  return this.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  return (this.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
 });
 
 // Virtual for total returned items
 demoIssueSchema.virtual('totalReturned').get(function() {
   if (!this.items) return 0;
-  return this.items.reduce((sum, item) => sum + (item.returnedQuantity || 0), 0);
+  return (this.items || []).reduce((sum, item) => sum + (item.returnedQuantity || 0), 0);
 });
 
 // Virtual for pending items

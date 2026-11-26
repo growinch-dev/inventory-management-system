@@ -45,6 +45,25 @@ const Production = () => {
     }
   };
 
+  // Live figures from the loaded entries (cancelled/planned runs excluded).
+  const stats = (() => {
+    const done = productions.filter((p) => p.status === 'completed' || p.status === 'in_progress');
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date(startOfToday); startOfWeek.setDate(startOfWeek.getDate() - 6);
+    const sum = (rows, k) => rows.reduce((t, p) => t + (p[k] || 0), 0);
+    const today = done.filter((p) => new Date(p.productionDate) >= startOfToday);
+    const week = done.filter((p) => new Date(p.productionDate) >= startOfWeek);
+    const produced = sum(week, 'producedQuantity');
+    const planned = sum(week, 'plannedQuantity');
+    return {
+      today: sum(today, 'goodQuantity'),
+      week: sum(week, 'goodQuantity'),
+      rejection: produced ? (sum(week, 'rejectedQuantity') / produced) * 100 : 0,
+      efficiency: planned ? (sum(week, 'goodQuantity') / planned) * 100 : 0,
+    };
+  })();
+  const fmt = (n) => Number(n || 0).toLocaleString('en-IN');
+
   const getStatusBadge = (status) => {
     const variants = {
       completed: 'success',
@@ -138,8 +157,8 @@ const Production = () => {
         <div className="bg-white p-4 rounded-lg border border-secondary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-secondary-500">Today's Production</p>
-              <p className="text-2xl font-bold text-secondary">9,700</p>
+              <p className="text-sm text-secondary-500">Good units today</p>
+              <p className="text-2xl font-bold text-secondary">{fmt(stats.today)}</p>
             </div>
             <Package className="w-8 h-8 text-primary" />
           </div>
@@ -147,8 +166,8 @@ const Production = () => {
         <div className="bg-white p-4 rounded-lg border border-secondary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-secondary-500">Rejection Rate</p>
-              <p className="text-2xl font-bold text-warning">1.5%</p>
+              <p className="text-sm text-secondary-500">Rejection rate (7 days)</p>
+              <p className="text-2xl font-bold text-warning">{stats.rejection.toFixed(1)}%</p>
             </div>
             <AlertTriangle className="w-8 h-8 text-warning" />
           </div>
@@ -156,8 +175,8 @@ const Production = () => {
         <div className="bg-white p-4 rounded-lg border border-secondary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-secondary-500">This Week</p>
-              <p className="text-2xl font-bold text-secondary">67,850</p>
+              <p className="text-sm text-secondary-500">Good units (7 days)</p>
+              <p className="text-2xl font-bold text-secondary">{fmt(stats.week)}</p>
             </div>
             <Calendar className="w-8 h-8 text-info" />
           </div>
@@ -165,8 +184,8 @@ const Production = () => {
         <div className="bg-white p-4 rounded-lg border border-secondary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-secondary-500">Efficiency</p>
-              <p className="text-2xl font-bold text-success">97%</p>
+              <p className="text-sm text-secondary-500">Plan achieved (7 days)</p>
+              <p className="text-2xl font-bold text-success">{stats.efficiency.toFixed(0)}%</p>
             </div>
             <CheckCircle className="w-8 h-8 text-success" />
           </div>

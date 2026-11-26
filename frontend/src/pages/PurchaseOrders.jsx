@@ -320,7 +320,7 @@ const PurchaseOrders = () => {
                       <Table.Cell>
                         <Link
                           to={`/purchase-orders/${po._id}`}
-                          className="font-semibold text-primary hover:text-primary-dark transition-colors"
+                          className="font-semibold text-primary hover:text-primary-dark transition-colors whitespace-nowrap"
                         >
                           {po.poNumber}
                         </Link>

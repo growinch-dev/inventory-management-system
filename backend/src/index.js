@@ -67,6 +67,7 @@ app.use('/api/tenant', require('./routes/tenant'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/roles', require('./routes/roles'));
 app.use('/api/investments', require('./routes/investments'));
+app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/salaries', require('./routes/salaries'));
 
 // Product batches sub-route

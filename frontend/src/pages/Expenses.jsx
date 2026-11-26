@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { expensesAPI } from '../services/api';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, IndianRupee } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -7,58 +9,40 @@ import Select from '../components/ui/Select';
 import Textarea from '../components/ui/Textarea';
 
 const Expenses = () => {
-  const [expenses, setExpenses] = useState([
-    {
-      id: 1,
-      date: '2026-11-20',
-      category: 'salary',
-      description: 'Factory Staff Salaries - November 2026',
-      amount: 125000,
-      paymentMode: 'bank_transfer',
-      vendor: 'Internal',
-      status: 'paid',
-    },
-    {
-      id: 2,
-      date: '2026-11-18',
-      category: 'electricity',
-      description: 'Factory Electricity Bill - November',
-      amount: 18500,
-      paymentMode: 'online',
-      vendor: 'State Electricity Board',
-      status: 'paid',
-    },
-    {
-      id: 3,
-      date: '2026-11-15',
-      category: 'maintenance',
-      description: 'Bottling Machine Maintenance',
-      amount: 8500,
-      paymentMode: 'cash',
-      vendor: 'Tech Services',
-      status: 'paid',
-    },
-    {
-      id: 4,
-      date: '2026-11-12',
-      category: 'transport',
-      description: 'Vehicle Fuel - November',
-      amount: 12000,
-      paymentMode: 'petty_cash',
-      vendor: 'Multiple',
-      status: 'paid',
-    },
-    {
-      id: 5,
-      date: '2026-11-10',
-      category: 'rent',
-      description: 'Factory Rent - November 2026',
-      amount: 45000,
-      paymentMode: 'bank_transfer',
-      vendor: 'Landlord',
-      status: 'paid',
-    },
-  ]);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // API document -> row shape used by this page
+  const toRow = (e) => ({
+    id: e._id,
+    expenseNumber: e.expenseNumber,
+    date: e.expenseDate ? String(e.expenseDate).slice(0, 10) : '',
+    category: e.category,
+    description: e.description,
+    amount: Number(e.totalAmount ?? e.amount ?? 0),
+    paymentMode: e.paymentMode,
+    vendor: e.vendor || '',
+    billNumber: e.billNumber || '',
+    notes: e.notes || '',
+    status: e.paymentStatus || 'paid',
+  });
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const response = await expensesAPI.getAll({ limit: 500 });
+      setExpenses((response.data.data || []).map(toRow));
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to load expenses');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -131,41 +115,53 @@ const Expenses = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteExpense = (id) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      setExpenses(expenses.filter(exp => exp.id !== id));
+  const handleDeleteExpense = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) return;
+    try {
+      await expensesAPI.delete(id);
+      setExpenses((prev) => prev.filter((exp) => exp.id !== id));
+      toast.success('Expense deleted');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete expense');
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (currentExpense) {
-      // Update existing expense
-      setExpenses(expenses.map(exp =>
-        exp.id === currentExpense.id
-          ? { ...formData, id: exp.id, status: 'paid' }
-          : exp
-      ));
-    } else {
-      // Add new expense
-      setExpenses([
-        ...expenses,
-        {
-          ...formData,
-          id: expenses.length + 1,
-          status: 'paid',
-        }
-      ]);
+    const payload = {
+      expenseDate: formData.date,
+      category: formData.category,
+      description: formData.description,
+      amount: Number(formData.amount) || 0,
+      paymentMode: formData.paymentMode,
+      vendor: formData.vendor || 'Not specified',
+      billNumber: formData.billNumber,
+      notes: formData.notes,
+      paymentStatus: 'paid',
+    };
+    try {
+      setSaving(true);
+      if (currentExpense) {
+        const response = await expensesAPI.update(currentExpense.id, payload);
+        setExpenses((prev) => prev.map((exp) => (exp.id === currentExpense.id ? toRow(response.data.data) : exp)));
+        toast.success('Expense updated');
+      } else {
+        const response = await expensesAPI.create(payload);
+        setExpenses((prev) => [toRow(response.data.data), ...prev]);
+        toast.success('Expense added');
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save expense');
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
   };
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch =
-      expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      expense.vendor.toLowerCase().includes(searchQuery.toLowerCase());
+      (expense.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (expense.vendor || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -220,7 +216,7 @@ const Expenses = () => {
             <div>
               <p className="text-sm text-primary-600">This Month</p>
               <p className="text-2xl font-bold text-primary-900 mt-1">
-                ₹{totalExpenses.toLocaleString('en-IN')}
+                ₹{Math.round(expenses.filter((x) => (x.date || '').slice(0, 7) === new Date().toISOString().slice(0, 7)).reduce((t, x) => t + x.amount, 0)).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="p-3 bg-orange-50 rounded-lg">
@@ -286,7 +282,7 @@ const Expenses = () => {
       {/* Expenses Table */}
       <div className="bg-white rounded-lg shadow-sm border border-primary-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-primary-200">
+          <table className="w-full min-w-[720px] divide-y divide-primary-200">
             <thead className="bg-primary-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-primary-900 uppercase tracking-wider">
@@ -313,6 +309,13 @@ const Expenses = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-primary-200">
+              {filteredExpenses.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-secondary-500">
+                    {loading ? 'Loading expenses…' : 'No expenses recorded yet. Click "Add Expense" to record electricity, rent, fuel and other costs.'}
+                  </td>
+                </tr>
+              )}
               {filteredExpenses.map((expense) => (
                 <tr key={expense.id} className="hover:bg-primary-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
@@ -462,7 +465,7 @@ const Expenses = () => {
             >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={saving}>
               {currentExpense ? 'Update Expense' : 'Add Expense'}
             </Button>
           </div>

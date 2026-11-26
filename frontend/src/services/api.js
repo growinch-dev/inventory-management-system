@@ -64,6 +64,14 @@ export const investmentsAPI = {
   delete: (id) => api.delete(`/investments/${id}`),
 };
 
+// Expenses API
+export const expensesAPI = {
+  getAll: (params) => api.get('/expenses', { params }),
+  create: (data) => api.post('/expenses', data),
+  update: (id, data) => api.put(`/expenses/${id}`, data),
+  delete: (id) => api.delete(`/expenses/${id}`),
+};
+
 // Salary payments API
 export const salariesAPI = {
   getAll: (params) => api.get('/salaries', { params }),
@@ -324,7 +332,7 @@ export const subscriptionsAPI = {
   changePlan: (data) => api.post('/subscriptions/change-plan', data),
   cancelSubscription: () => api.post('/subscriptions/cancel'),
   getUsage: () => api.get('/subscriptions/usage'),
-  getPaymentHistory: () => api.get('/subscriptions/payment-history'),
+  getPaymentHistory: () => api.get('/subscriptions/invoices'),
   applyCoupon: (code) => api.post('/subscriptions/apply-coupon', { code }),
 };
 

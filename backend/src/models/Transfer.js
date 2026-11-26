@@ -129,11 +129,11 @@ transferSchema.pre('validate', async function() {
 
 // Virtual for total items count
 transferSchema.virtual('totalItems').get(function() {
-  return this.items.reduce((sum, item) => sum + item.quantity, 0);
+  return (this.items || []).reduce((sum, item) => sum + item.quantity, 0);
 });
 
 transferSchema.virtual('totalReceivedItems').get(function() {
-  return this.items.reduce((sum, item) => sum + item.receivedQuantity, 0);
+  return (this.items || []).reduce((sum, item) => sum + item.receivedQuantity, 0);
 });
 
 // Ensure virtuals are included in JSON

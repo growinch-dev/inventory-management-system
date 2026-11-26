@@ -48,6 +48,15 @@ const tenantSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  // Shown on invoices ("Bank Details" block)
+  bankDetails: {
+    bankName: { type: String, trim: true },
+    accountName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    ifscCode: { type: String, trim: true, uppercase: true },
+    branch: { type: String, trim: true },
+    upiId: { type: String, trim: true },
+  },
   businessType: {
     type: String,
     enum: ['sole_proprietorship', 'partnership', 'llp', 'pvt_ltd', 'public_ltd', 'other'],

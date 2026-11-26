@@ -15,21 +15,35 @@ import {
   Calendar,
   Clock,
   ShoppingCart,
+  ArrowUpRight,
+  ArrowDownRight,
+  IndianRupee,
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { dashboardAPI, warehousesAPI, transfersAPI, batchesAPI } from '../services/api';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { dashboardAPI, transfersAPI, batchesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { PageHeader, Card, StatCard, Badge, LoadingSpinner, EmptyState, Button } from '../components/ui';
 import { useLanguage } from '../context/LanguageContext';
 
-// Design system colors for charts - Indigo theme palette
-const CHART_COLORS = ['#6366F1', '#0EA5E9', '#22C55E', '#F97316', '#EF4444', '#A855F7'];
+const inr = (n, digits = 0) =>
+  `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: digits, minimumFractionDigits: 0 })}`;
+const compactInr = (n) => {
+  const v = Number(n || 0);
+  if (v >= 1e7) return `₹${(v / 1e7).toFixed(1)}Cr`;
+  if (v >= 1e5) return `₹${(v / 1e5).toFixed(1)}L`;
+  if (v >= 1e3) return `₹${(v / 1e3).toFixed(0)}k`;
+  return `₹${v}`;
+};
+const qty = (n) => Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+const REASON_LABELS = {
+  purchase: 'Purchase received', sale: 'Sold', return: 'Returned', damage: 'Damaged', expired: 'Expired',
+  adjustment: 'Stock adjustment', transfer: 'Transferred', initial: 'Opening stock', demo: 'Sample / trial', production: 'Production',
+};
 
 const Dashboard = () => {
   const { t } = useLanguage();
   const [stats, setStats] = useState(null);
-  const [warehouses, setWarehouses] = useState([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  const [stockView, setStockView] = useState('finished_good');
   const [transferStats, setTransferStats] = useState(null);
   const [expiryAlerts, setExpiryAlerts] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +51,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    fetchWarehouses();
     fetchTransferStats();
     fetchExpiryAlerts();
   }, []);
@@ -53,15 +66,6 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
-    }
-  };
-
-  const fetchWarehouses = async () => {
-    try {
-      const response = await warehousesAPI.getList();
-      setWarehouses(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to load warehouses');
     }
   };
 
@@ -100,20 +104,28 @@ const Dashboard = () => {
       highlight: (stats?.overview?.lowStockProducts || 0) > 0,
     },
     {
-      title: t('invoices.title'),
+      title: 'Invoices this month',
       value: stats?.overview?.monthlyInvoices || 0,
       icon: FileText,
       iconColor: 'success',
       href: '/invoices',
     },
     {
-      title: t('customers.title'),
-      value: stats?.overview?.totalCustomers || 0,
-      icon: Users,
-      iconColor: 'primary',
-      href: '/customers',
+      title: 'To collect (receivables)',
+      value: stats?.overview?.receivables || 0,
+      format: 'currency',
+      icon: IndianRupee,
+      iconColor: 'warning',
+      href: '/payments',
     },
   ];
+
+  // Raw materials in one tab; finished goods (and anything else) in the other.
+  const categoryRows = (stats?.categoryStock || []).filter((c) =>
+    stockView === 'raw_material' ? c.productType === 'raw_material' : c.productType !== 'raw_material'
+  );
+  const maxCategoryValue = Math.max(1, ...categoryRows.map((c) => c.totalValue || 0));
+  const revenueTotal = (stats?.revenueStats || []).reduce((sum, m) => sum + (m.revenue || 0), 0);
 
   // Custom tooltip for charts
   const CustomTooltip = ({ active, payload, label, formatter, labelFormatter }) => {
@@ -144,22 +156,6 @@ const Dashboard = () => {
         subtitle={t('dashboard.subtitle')}
         actions={
           <div className="flex gap-3">
-            {/* Warehouse Selector */}
-            {warehouses.length > 0 && (
-              <div className="flex items-center gap-2 bg-secondary-50 rounded-lg px-3 py-1.5">
-                <Warehouse size={16} className="text-secondary-400" />
-                <select
-                  value={selectedWarehouse}
-                  onChange={(e) => setSelectedWarehouse(e.target.value)}
-                  className="bg-transparent border-none text-sm font-medium text-secondary focus:outline-none cursor-pointer"
-                >
-                  <option value="">{t('warehouses.title')}</option>
-                  {warehouses.map(wh => (
-                    <option key={wh._id} value={wh._id}>{wh.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
             <Button
               variant="ghost"
               size="sm"
@@ -188,6 +184,7 @@ const Dashboard = () => {
             key={index}
             title={card.title}
             value={card.value}
+            format={card.format}
             icon={card.icon}
             iconColor={card.iconColor}
             href={card.href}
@@ -201,46 +198,42 @@ const Dashboard = () => {
         {/* Revenue Chart */}
         <Card className="transition-shadow hover:shadow-card-hover">
           <Card.Header>
-            <Card.Title>Monthly Revenue</Card.Title>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-secondary-500 bg-secondary-50 px-2 py-1 rounded-full">
-                {new Date().getFullYear()}
-              </span>
-              <TrendingUp className="text-primary" size={20} aria-hidden="true" />
+            <div>
+              <Card.Title>Sales – last 6 months</Card.Title>
+              <p className="text-xs text-secondary-500 mt-0.5">Billed invoices, excluding drafts and cancelled</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-semibold text-secondary">{inr(revenueTotal)}</p>
+              <p className="text-xs text-secondary-500">6-month total</p>
             </div>
           </Card.Header>
           <Card.Content>
-            {(stats?.revenueStats || []).length > 0 ? (
+            {revenueTotal > 0 ? (
               <div className="h-72" role="img" aria-label="Monthly revenue bar chart showing revenue trends">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats?.revenueStats || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E4E4E7" vertical={false} />
                     <XAxis
-                      dataKey="_id"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 12, fill: '#71717A' }}
-                      tickFormatter={(month) => {
-                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        return months[month - 1] || '';
-                      }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
+                      width={56}
                       tick={{ fontSize: 12, fill: '#71717A' }}
-                      tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={compactInr}
                     />
                     <Tooltip
+                      cursor={{ fill: '#EEF2FF' }}
                       content={<CustomTooltip
-                        formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
-                        labelFormatter={(month) => {
-                          const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                          return months[month - 1] || '';
-                        }}
+                        formatter={(value) => [inr(value)]}
+                        labelFormatter={(label) => label}
                       />}
                     />
-                    <Bar dataKey="revenue" fill="#6366F1" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                    <Bar dataKey="revenue" name="Sales" fill="#6366F1" radius={[6, 6, 0, 0]} maxBarSize={44} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -255,53 +248,57 @@ const Dashboard = () => {
           </Card.Content>
         </Card>
 
-        {/* Category Distribution */}
+        {/* Stock value by category */}
         <Card className="transition-shadow hover:shadow-card-hover">
           <Card.Header>
-            <Card.Title>Stock by Category</Card.Title>
-            <Package className="text-primary" size={20} aria-hidden="true" />
+            <div>
+              <Card.Title>Stock value by category</Card.Title>
+              <p className="text-xs text-secondary-500 mt-0.5">Quantity in stock × selling price</p>
+            </div>
+            <div className="inline-flex rounded-lg bg-secondary-100 p-0.5 text-xs font-medium" role="tablist">
+              {[
+                ['finished_good', 'Finished goods'],
+                ['raw_material', 'Raw materials'],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={stockView === key}
+                  onClick={() => setStockView(key)}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${stockView === key ? 'bg-white text-secondary shadow-sm' : 'text-secondary-500 hover:text-secondary'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </Card.Header>
           <Card.Content>
-            {(stats?.categoryStock || []).length > 0 ? (
-              <div className="h-72" role="img" aria-label="Stock distribution pie chart by category">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={stats?.categoryStock || []}
-                      dataKey="totalQuantity"
-                      nameKey="_id"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={90}
-                      paddingAngle={2}
-                      label={({ _id, percent }) => `${(percent * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: '#A1A1AA', strokeWidth: 1 }}
-                    >
-                      {(stats?.categoryStock || []).map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          className="transition-opacity hover:opacity-80"
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={<CustomTooltip formatter={(value, name) => [`${value} units`, name]} />}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      formatter={(value) => <span className="text-sm text-secondary-600">{value}</span>}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+            {categoryRows.length > 0 ? (
+              <ul className="space-y-3.5 h-72 overflow-y-auto pr-1" aria-label="Stock value by category">
+                {categoryRows.map((c) => (
+                  <li key={c._id}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="font-medium text-secondary truncate">{c.name}</span>
+                      <span className="font-semibold text-secondary whitespace-nowrap">{inr(c.totalValue)}</span>
+                    </div>
+                    <div className="mt-1.5 h-2 rounded-full bg-secondary-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${stockView === 'raw_material' ? 'bg-amber-500' : 'bg-primary'}`}
+                        style={{ width: `${Math.max(2, (c.totalValue / maxCategoryValue) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-secondary-500">
+                      {qty(c.totalQuantity)} {(c.unit || 'units').toLowerCase()} • {c.productCount} {c.productCount === 1 ? 'product' : 'products'}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             ) : (
               <EmptyState
                 icon={Package}
-                title="No category data"
-                description="Add products with categories to see distribution"
+                title="No stock in this group"
+                description="Add products with a category to see stock value here"
                 compact
               />
             )}
@@ -316,7 +313,7 @@ const Dashboard = () => {
           <Card.Header>
             <Card.Title>Recent Activity</Card.Title>
             <Link
-              to="/reports"
+              to="/movements"
               className="text-primary text-sm font-medium hover:text-primary-dark flex items-center gap-1 transition-colors"
             >
               View All <ArrowRight size={14} aria-hidden="true" />
@@ -331,19 +328,23 @@ const Dashboard = () => {
                     className="flex items-center gap-4 px-6 py-3.5 hover:bg-secondary-50/50 transition-colors"
                   >
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-transform hover:scale-105 ${
-                        movement.type === 'in' ? 'bg-success-light text-success' : 'bg-danger-light text-danger'
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        movement.type === 'in' ? 'bg-success-light text-success' : movement.type === 'out' ? 'bg-danger-light text-danger' : 'bg-info-light text-info'
                       }`}
                       aria-hidden="true"
                     >
-                      {movement.type === 'in' ? '+' : '-'}
+                      {movement.type === 'in' ? <ArrowDownRight size={18} /> : movement.type === 'out' ? <ArrowUpRight size={18} /> : <ArrowRightLeft size={18} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-secondary truncate">
                         {movement.product?.name || 'Unknown Product'}
                       </p>
-                      <p className="text-xs text-secondary-500">
-                        {movement.type === 'in' ? 'Stock Added' : 'Stock Removed'} • {movement.quantity} units
+                      <p className="text-xs text-secondary-500 truncate">
+                        <span className={movement.type === 'in' ? 'text-success font-medium' : movement.type === 'out' ? 'text-danger font-medium' : 'font-medium'}>
+                          {movement.type === 'in' ? '+' : movement.type === 'out' ? '−' : ''}{qty(movement.quantity)}
+                        </span>
+                        {' • '}{REASON_LABELS[movement.reason] || movement.reason}
+                        {movement.reference ? ` • ${movement.reference}` : ''}
                       </p>
                     </div>
                     <time className="text-xs text-secondary-400 whitespace-nowrap" dateTime={movement.createdAt}>

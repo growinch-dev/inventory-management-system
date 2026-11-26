@@ -46,15 +46,21 @@ const Settings = () => {
   // Company settings
   const [companyData, setCompanyData] = useState({
     companyName: '',
-    address: '',
+    street: '',
+    city: '',
+    state: '',
+    pincode: '',
+    invoicePrefix: 'INV',
     phone: '',
     email: '',
     gstNumber: '',
     panNumber: '',
     bankName: '',
+    accountName: '',
     accountNumber: '',
     ifscCode: '',
     branch: '',
+    upiId: '',
   });
 
   // Notification settings
@@ -88,7 +94,17 @@ const Settings = () => {
         phone: tenant.phone || '',
         gstNumber: tenant.gstNumber || '',
         panNumber: tenant.panNumber || '',
-        address: [a.street, a.city, a.state, a.pincode].filter(Boolean).join(', '),
+        street: a.street || '',
+        city: a.city || '',
+        state: a.state || '',
+        pincode: a.pincode || '',
+        invoicePrefix: tenant.settings?.invoicePrefix || 'INV',
+        bankName: tenant.bankDetails?.bankName || '',
+        accountName: tenant.bankDetails?.accountName || '',
+        accountNumber: tenant.bankDetails?.accountNumber || '',
+        ifscCode: tenant.bankDetails?.ifscCode || '',
+        branch: tenant.bankDetails?.branch || '',
+        upiId: tenant.bankDetails?.upiId || '',
       }));
       setLogo(tenant.settings?.logo || '');
     }
@@ -163,8 +179,23 @@ const Settings = () => {
         phone: companyData.phone,
         gstNumber: companyData.gstNumber,
         panNumber: companyData.panNumber,
+        address: {
+          street: companyData.street,
+          city: companyData.city,
+          state: companyData.state,
+          pincode: companyData.pincode,
+        },
+        bankDetails: {
+          bankName: companyData.bankName,
+          accountName: companyData.accountName,
+          accountNumber: companyData.accountNumber,
+          ifscCode: companyData.ifscCode,
+          branch: companyData.branch,
+          upiId: companyData.upiId,
+        },
         settings: {
           logo: logo || '',
+          invoicePrefix: (companyData.invoicePrefix || 'INV').trim().toUpperCase(),
         },
       });
       setTenant(response.data.data);
@@ -468,15 +499,47 @@ const Settings = () => {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="label">Address</label>
-                      <textarea
-                        value={companyData.address}
-                        onChange={(e) =>
-                          setCompanyData({ ...companyData, address: e.target.value })
-                        }
-                        rows={2}
+                      <label className="label">Address (street / area)</label>
+                      <input
+                        type="text"
+                        value={companyData.street}
+                        onChange={(e) => setCompanyData({ ...companyData, street: e.target.value })}
+                        placeholder="e.g. Plot 14, SIDCO Industrial Estate"
                         className="input"
                       />
+                    </div>
+
+                    <div>
+                      <label className="label">City</label>
+                      <input
+                        type="text"
+                        value={companyData.city}
+                        onChange={(e) => setCompanyData({ ...companyData, city: e.target.value })}
+                        className="input"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">State</label>
+                        <input
+                          type="text"
+                          value={companyData.state}
+                          onChange={(e) => setCompanyData({ ...companyData, state: e.target.value })}
+                          className="input"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">PIN code</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={companyData.pincode}
+                          onChange={(e) => setCompanyData({ ...companyData, pincode: e.target.value.replace(/\D/g, '') })}
+                          className="input"
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -515,6 +578,20 @@ const Settings = () => {
                         }
                         className="input"
                       />
+                    </div>
+
+                    <div>
+                      <label className="label">Invoice number prefix</label>
+                      <input
+                        type="text"
+                        maxLength={8}
+                        value={companyData.invoicePrefix}
+                        onChange={(e) => setCompanyData({ ...companyData, invoicePrefix: e.target.value.toUpperCase() })}
+                        className="input"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        New invoices: {(companyData.invoicePrefix || 'INV')}/{new Date().getFullYear()}-{String(new Date().getMonth() + 1).padStart(2, '0')}/0001
+                      </p>
                     </div>
 
                     <div>
@@ -580,6 +657,32 @@ const Settings = () => {
                         className="input"
                       />
                     </div>
+
+                    <div>
+                      <label className="label">Account holder name</label>
+                      <input
+                        type="text"
+                        value={companyData.accountName}
+                        onChange={(e) => setCompanyData({ ...companyData, accountName: e.target.value })}
+                        className="input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="label">UPI ID</label>
+                      <input
+                        type="text"
+                        value={companyData.upiId}
+                        onChange={(e) => setCompanyData({ ...companyData, upiId: e.target.value })}
+                        placeholder="e.g. business@upi"
+                        className="input"
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Printed on your invoices. Leave empty to hide the bank section.
+                  </p>
+                  <div className="hidden">
                   </div>
                 </div>
 

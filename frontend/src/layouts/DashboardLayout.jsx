@@ -220,13 +220,13 @@ const DashboardLayout = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-secondary-200 transform transition-transform duration-300 ease-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-screen w-64 flex flex-col bg-white border-r border-secondary-200 transform transition-transform duration-300 ease-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="flex items-center justify-between h-16 px-5 border-b border-secondary-100">
+        <div className="flex items-center justify-between h-16 flex-shrink-0 px-5 border-b border-secondary-100">
           <Link to="/" className="flex items-center gap-2.5 group min-w-0">
             {tenant?.settings?.logo ? (
               <>
@@ -255,7 +255,7 @@ const DashboardLayout = () => {
           </button>
         </div>
 
-        <nav className="p-2 overflow-y-auto h-[calc(100vh-64px-72px)] scrollbar-thin" aria-label="Sidebar navigation">
+        <nav className="flex-1 min-h-0 p-2 overflow-y-auto" aria-label="Sidebar navigation">
           {filteredNavigationGroups.map((group) => (
             <div key={group.id} className="mb-1">
               {group.label && (
@@ -287,7 +287,7 @@ const DashboardLayout = () => {
           ))}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-secondary-100 bg-white">
+        <div className="flex-shrink-0 p-3 border-t border-secondary-100 bg-white">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-danger hover:bg-danger-light transition-colors"

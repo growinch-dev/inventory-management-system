@@ -1,10 +1,104 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-const Table = ({ children, className = '' }) => (
-  <div className={`overflow-x-auto ${className}`}>
-    <table className="w-full">{children}</table>
-  </div>
-);
+const getPath = (obj, path) =>
+  path ? String(path).split('.').reduce((acc, k) => (acc == null ? acc : acc[k]), obj) : undefined;
+
+// Render one cell for either column style used in the app:
+//   { key, label, render: (row) => ... }
+//   { header, accessorKey, cell: ({ row }) => ... }   (row.original = data)
+const renderCell = (col, row, index) => {
+  if (col.render) return col.render(row, index);
+  if (col.cell) return col.cell({ row: { original: row, index }, getValue: () => getPath(row, col.accessorKey) });
+  const value = getPath(row, col.key ?? col.accessorKey);
+  return value === undefined || value === null || value === '' ? '-' : String(value);
+};
+
+/**
+ * Two ways to use it:
+ *  1. Composition: <Table><Table.Head>...</Table.Head><Table.Body>...</Table.Body></Table>
+ *  2. Data-driven:  <Table columns={[...]} data={rows} loading emptyMessage onRowClick pagination />
+ */
+const Table = ({ children, className = '', columns, data, loading = false, emptyMessage = 'No records found', onRowClick, pagination }) => {
+  if (!columns) {
+    return (
+      <div className={`overflow-x-auto ${className}`}>
+        <table className="w-full min-w-[720px]">{children}</table>
+      </div>
+    );
+  }
+
+  const rows = Array.isArray(data) ? data : [];
+  return (
+    <div className={className}>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px]">
+          <thead className="bg-secondary-200/60">
+            <tr>
+              {columns.map((col, i) => (
+                <th
+                  key={col.key || col.accessorKey || i}
+                  className={`px-4 py-3.5 text-xs font-semibold text-secondary-500 uppercase tracking-wider whitespace-nowrap first:rounded-tl-lg last:rounded-tr-lg ${
+                    col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                  }`}
+                >
+                  {col.label ?? col.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-secondary-100">
+            {loading ? (
+              [...Array(5)].map((_, r) => (
+                <tr key={r} className="bg-white">
+                  {columns.map((_, c) => (
+                    <td key={c} className="px-4 py-4">
+                      <div className="h-4 rounded bg-secondary-100 animate-pulse" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : rows.length === 0 ? (
+              <tr className="bg-white">
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-secondary-500">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, r) => (
+                <tr
+                  key={row._id || r}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={`bg-white hover:bg-secondary-50 transition-colors duration-150 ${onRowClick ? 'cursor-pointer' : ''}`}
+                >
+                  {columns.map((col, c) => (
+                    <td
+                      key={col.key || col.accessorKey || c}
+                      className={`px-4 py-3.5 text-sm text-secondary-700 ${
+                        col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                      }`}
+                      onClick={col.key === 'actions' || col.id === 'actions' ? (e) => e.stopPropagation() : undefined}
+                    >
+                      {renderCell(col, row, r)}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      {pagination && pagination.totalPages > 1 && (
+        <TablePagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          itemsPerPage={pagination.itemsPerPage}
+          onPageChange={pagination.onPageChange}
+        />
+      )}
+    </div>
+  );
+};
 
 const TableHead = ({ children, className = '' }) => (
   <thead className={`bg-secondary-200/60 ${className}`}>{children}</thead>

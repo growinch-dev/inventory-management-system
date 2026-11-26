@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { paymentsAPI } from '../services/api';
 import { Plus, Edit2, Trash2, Search, Filter, Calendar, IndianRupee, Download } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -7,48 +9,42 @@ import Select from '../components/ui/Select';
 import Textarea from '../components/ui/Textarea';
 
 const Receipts = () => {
-  const [receipts, setReceipts] = useState([
-    {
-      id: 1,
-      date: '2026-11-22',
-      receiptNumber: 'RCP-001',
-      customer: 'ABC Retailers',
-      invoiceNumber: 'INV-2024-001',
-      amount: 45000,
-      paymentMode: 'bank_transfer',
-      status: 'confirmed',
-    },
-    {
-      id: 2,
-      date: '2026-11-21',
-      receiptNumber: 'RCP-002',
-      customer: 'XYZ Distributors',
-      invoiceNumber: 'INV-2024-002',
-      amount: 78500,
-      paymentMode: 'cheque',
-      status: 'confirmed',
-    },
-    {
-      id: 3,
-      date: '2026-11-20',
-      receiptNumber: 'RCP-003',
-      customer: 'Paradise Hotel',
-      invoiceNumber: 'INV-2024-003',
-      amount: 32000,
-      paymentMode: 'online',
-      status: 'confirmed',
-    },
-    {
-      id: 4,
-      date: '2026-11-19',
-      receiptNumber: 'RCP-004',
-      customer: 'Tech Corp',
-      invoiceNumber: 'INV-2024-004',
-      amount: 15000,
-      paymentMode: 'cash',
-      status: 'pending',
-    },
-  ]);
+  // Receipts = payments received from customers (same records as the Payments page).
+  const [receipts, setReceipts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const METHOD_TO_API = { online: 'neft', bank_transfer: 'bank_transfer', cash: 'cash', cheque: 'cheque', upi: 'upi' };
+  const API_TO_METHOD = { neft: 'online', rtgs: 'online', imps: 'online', bank_transfer: 'bank_transfer', cash: 'cash', cheque: 'cheque', upi: 'upi' };
+
+  const toRow = (p) => ({
+    id: p._id,
+    date: p.paymentDate ? String(p.paymentDate).slice(0, 10) : '',
+    receiptNumber: p.paymentNumber,
+    customer: p.party?.name || '',
+    invoiceNumber: p.referenceNumber || '',
+    amount: Number(p.amount || 0),
+    paymentMode: API_TO_METHOD[p.paymentMethod] || p.paymentMethod,
+    transactionId: p.transactionReference || p.upiDetails?.transactionId || p.chequeDetails?.chequeNumber || '',
+    notes: p.notes || '',
+    status: p.status === 'completed' ? 'confirmed' : p.status,
+  });
+
+  const fetchReceipts = async () => {
+    try {
+      setLoading(true);
+      const response = await paymentsAPI.getAll({ paymentType: 'received', limit: 500 });
+      setReceipts((response.data.data || []).map(toRow));
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to load receipts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReceipts();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -106,49 +102,56 @@ const Receipts = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteReceipt = (id) => {
-    if (window.confirm('Are you sure you want to delete this receipt?')) {
-      setReceipts(receipts.filter(rec => rec.id !== id));
+  const handleDeleteReceipt = async (id) => {
+    if (!window.confirm('Delete this receipt? The amount will be added back to the customer\'s outstanding balance.')) return;
+    try {
+      await paymentsAPI.delete(id);
+      setReceipts((prev) => prev.filter((rec) => rec.id !== id));
+      toast.success('Receipt deleted');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete receipt');
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (currentReceipt) {
-      // Update existing receipt
-      setReceipts(receipts.map(rec =>
-        rec.id === currentReceipt.id
-          ? {
-              ...formData,
-              id: rec.id,
-              receiptNumber: rec.receiptNumber,
-              status: 'confirmed'
-            }
-          : rec
-      ));
-    } else {
-      // Add new receipt
-      const newReceiptNumber = `RCP-${String(receipts.length + 1).padStart(3, '0')}`;
-      setReceipts([
-        ...receipts,
-        {
-          ...formData,
-          id: receipts.length + 1,
-          receiptNumber: newReceiptNumber,
-          status: 'confirmed',
-        }
-      ]);
+    const payload = {
+      paymentDate: formData.date,
+      amount: Number(formData.amount) || 0,
+      paymentMethod: METHOD_TO_API[formData.paymentMode] || 'other',
+      transactionReference: formData.transactionId,
+      notes: formData.notes,
+    };
+    try {
+      setSaving(true);
+      if (currentReceipt) {
+        const response = await paymentsAPI.update(currentReceipt.id, payload);
+        setReceipts((prev) => prev.map((rec) => (rec.id === currentReceipt.id ? toRow(response.data.data) : rec)));
+        toast.success('Receipt updated');
+      } else {
+        const response = await paymentsAPI.create({
+          ...payload,
+          referenceType: 'other',
+          referenceNumber: formData.invoiceNumber,
+          paymentType: 'received',
+          party: { type: 'customer', name: formData.customer || 'Walk-in Customer' },
+        });
+        setReceipts((prev) => [toRow(response.data.data), ...prev]);
+        toast.success('Receipt recorded');
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save receipt');
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
   };
 
   const filteredReceipts = receipts.filter(receipt => {
     const matchesSearch =
-      receipt.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      receipt.receiptNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      receipt.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      (receipt.customer || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (receipt.receiptNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (receipt.invoiceNumber || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || receipt.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -409,7 +412,7 @@ const Receipts = () => {
             <div>
               <p className="text-sm text-primary-600">Total Receipts</p>
               <p className="text-2xl font-bold text-primary-900 mt-1">
-                ₹{totalReceipts.toLocaleString('en-IN')}
+                ₹{Math.round(totalReceipts).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="p-3 bg-green-50 rounded-lg">
@@ -423,7 +426,7 @@ const Receipts = () => {
             <div>
               <p className="text-sm text-primary-600">This Month</p>
               <p className="text-2xl font-bold text-primary-900 mt-1">
-                ₹{totalReceipts.toLocaleString('en-IN')}
+                ₹{Math.round(receipts.filter((r) => (r.date || '').slice(0, 7) === new Date().toISOString().slice(0, 7)).reduce((t, r) => t + r.amount, 0)).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="p-3 bg-blue-50 rounded-lg">
@@ -488,7 +491,7 @@ const Receipts = () => {
       {/* Receipts Table */}
       <div className="bg-white rounded-lg shadow-sm border border-primary-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-primary-200">
+          <table className="w-full min-w-[720px] divide-y divide-primary-200">
             <thead className="bg-primary-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-primary-900 uppercase tracking-wider">
@@ -518,6 +521,13 @@ const Receipts = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-primary-200">
+              {filteredReceipts.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12 text-center text-sm text-secondary-500">
+                    {loading ? 'Loading receipts…' : 'No receipts yet. Payments you record against invoices appear here automatically.'}
+                  </td>
+                </tr>
+              )}
               {filteredReceipts.map((receipt) => (
                 <tr key={receipt.id} className="hover:bg-primary-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-900">
@@ -536,7 +546,7 @@ const Receipts = () => {
                     {getPaymentModeLabel(receipt.paymentMode)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600">
-                    ₹{receipt.amount.toLocaleString('en-IN')}
+                    ₹{receipt.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -669,7 +679,7 @@ const Receipts = () => {
             >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={saving}>
               {currentReceipt ? 'Update Receipt' : 'Add Receipt'}
             </Button>
           </div>

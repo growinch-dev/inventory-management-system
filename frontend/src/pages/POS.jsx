@@ -298,9 +298,9 @@ const POS = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-4">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-[calc(100vh-8rem)]">
       {/* Left Panel - Products */}
-      <div className="flex-1 flex flex-col bg-white rounded-xl border border-secondary-200 overflow-hidden">
+      <div className="flex-1 min-w-0 min-h-[420px] flex flex-col bg-white rounded-xl border border-secondary-200 overflow-hidden">
         {/* Search Header */}
         <div className="p-4 border-b border-secondary-100 space-y-3">
           <div className="flex gap-2">
@@ -401,85 +401,81 @@ const POS = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {cart.map((item, index) => (
-                <div
-                  key={item.product._id}
-                  className="bg-secondary-50 rounded-lg p-3 flex items-center gap-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-secondary truncate">
-                      {item.product.name}
-                    </p>
-                    <p className="text-sm text-secondary-500">
-                      SKU: {item.product.sku}
-                    </p>
-                  </div>
-
-                  {/* Price Edit */}
-                  <div className="w-24">
-                    <Input
-                      type="number"
-                      value={item.rate}
-                      onChange={(e) =>
-                        updateCartItem(
-                          item.product._id,
-                          'rate',
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="text-right text-sm"
-                      min="0"
-                    />
-                  </div>
-
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => decrementQuantity(item.product._id)}
-                      className="h-8 w-8 p-0"
+              {cart.map((item) => (
+                <div key={item.product._id} className="bg-secondary-50 rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-secondary leading-snug">{item.product.name}</p>
+                      <p className="text-xs text-secondary-500 mt-0.5">
+                        SKU: {item.product.sku} • In stock: {Number(item.product.quantity).toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.product._id)}
+                      className="p-1.5 rounded-md text-secondary-400 hover:text-danger hover:bg-danger-light transition-colors flex-shrink-0"
+                      aria-label={`Remove ${item.product.name}`}
                     >
-                      <Minus size={16} />
-                    </Button>
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const qty = parseInt(e.target.value) || 1;
-                        if (qty > item.product.quantity) {
-                          toast.error(`Only ${item.product.quantity} in stock`);
-                          return;
-                        }
-                        updateCartItem(item.product._id, 'quantity', qty);
-                      }}
-                      className="w-14 text-center"
-                      min="1"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => incrementQuantity(item.product._id)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Plus size={16} />
-                    </Button>
+                      <Trash2 size={16} />
+                    </button>
                   </div>
 
-                  {/* Line Total */}
-                  <div className="w-24 text-right font-medium text-secondary">
-                    ₹{(item.quantity * item.rate).toLocaleString()}
-                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    {/* Price */}
+                    <label className="flex items-center gap-1.5 text-xs text-secondary-500">
+                      Rate ₹
+                      <input
+                        type="number"
+                        min="0"
+                        value={item.rate}
+                        onChange={(e) => updateCartItem(item.product._id, 'rate', parseFloat(e.target.value) || 0)}
+                        className="w-24 rounded-md border border-secondary-200 bg-white px-2 py-1.5 text-right text-sm text-secondary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                      />
+                    </label>
 
-                  {/* Remove */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFromCart(item.product._id)}
-                    className="text-danger h-8 w-8 p-0"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                    {/* Quantity */}
+                    <div className="flex items-center rounded-md border border-secondary-200 bg-white">
+                      <button
+                        type="button"
+                        onClick={() => decrementQuantity(item.product._id)}
+                        className="h-8 w-8 flex items-center justify-center text-secondary-500 hover:text-secondary hover:bg-secondary-50 rounded-l-md"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const qty = parseInt(e.target.value) || 1;
+                          if (qty > item.product.quantity) {
+                            toast.error(`Only ${item.product.quantity} in stock`);
+                            return;
+                          }
+                          updateCartItem(item.product._id, 'quantity', qty);
+                        }}
+                        className="w-14 h-8 border-x border-secondary-200 text-center text-sm text-secondary outline-none"
+                        aria-label="Quantity"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => incrementQuantity(item.product._id)}
+                        className="h-8 w-8 flex items-center justify-center text-secondary-500 hover:text-secondary hover:bg-secondary-50 rounded-r-md"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+
+                    {/* Line total */}
+                    <div className="ml-auto text-right">
+                      <p className="font-semibold text-secondary">
+                        ₹{(item.quantity * item.rate).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-secondary-500">+ GST {item.product.taxRate ?? 18}%</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -505,7 +501,7 @@ const POS = () => {
       </div>
 
       {/* Right Panel - Checkout */}
-      <div className="w-96 flex flex-col bg-white rounded-xl border border-secondary-200 overflow-hidden">
+      <div className="w-full lg:w-96 flex-shrink-0 flex flex-col bg-white rounded-xl border border-secondary-200 overflow-hidden">
         {/* Customer Section */}
         <div className="p-4 border-b border-secondary-100">
           <div className="flex items-center justify-between mb-2">
@@ -555,10 +551,11 @@ const POS = () => {
             <Select
               value={discountType}
               onChange={(e) => setDiscountType(e.target.value)}
-              className="w-24"
+              className="w-28 flex-shrink-0"
+              aria-label="Discount type"
             >
-              <option value="percentage">%</option>
-              <option value="fixed">₹</option>
+              <option value="percentage">% off</option>
+              <option value="fixed">₹ off</option>
             </Select>
             <Input
               type="number"
@@ -574,21 +571,21 @@ const POS = () => {
         <div className="flex-1 p-4 space-y-3">
           <div className="flex justify-between text-secondary-600">
             <span>Subtotal</span>
-            <span>₹{subtotal.toLocaleString()}</span>
+            <span>₹{subtotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
           </div>
           {discountAmount > 0 && (
             <div className="flex justify-between text-success">
               <span>Discount</span>
-              <span>-₹{discountAmount.toLocaleString()}</span>
+              <span>-₹{discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
             </div>
           )}
           <div className="flex justify-between text-secondary-600">
             <span>Tax (GST)</span>
-            <span>₹{totalTax.toLocaleString()}</span>
+            <span>₹{totalTax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
           </div>
           <div className="border-t border-secondary-200 pt-3 flex justify-between text-xl font-bold text-secondary">
             <span>Total</span>
-            <span className="text-primary">₹{grandTotal.toLocaleString()}</span>
+            <span className="text-primary">₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
           </div>
         </div>
 
@@ -607,7 +604,7 @@ const POS = () => {
             disabled={cart.length === 0}
           >
             <CreditCard size={24} className="mr-2" />
-            Pay ₹{grandTotal.toLocaleString()}
+            Pay ₹{grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </Button>
 
           <div className="grid grid-cols-3 gap-2">

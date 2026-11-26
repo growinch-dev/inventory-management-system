@@ -79,9 +79,9 @@ const Payments = () => {
   useEffect(() => {
     if (activeTab === 'payments') {
       fetchPayments();
-    } else {
-      fetchOutstanding();
     }
+    // Outstanding is needed for the summary card on both tabs.
+    fetchOutstanding();
     fetchStats();
   }, [pagination.page, filters, activeTab]);
 
@@ -392,7 +392,7 @@ const Payments = () => {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[720px]">
                     <thead className="bg-secondary-50 border-b border-secondary-200">
                       <tr>
                         <th className="text-left px-4 py-3 text-sm font-semibold text-secondary-700">
@@ -421,7 +421,7 @@ const Payments = () => {
                     <tbody className="divide-y divide-secondary-100">
                       {payments.map((payment) => (
                         <tr key={payment._id} className="hover:bg-secondary-50">
-                          <td className="px-4 py-3 font-medium text-secondary">
+                          <td className="px-4 py-3 font-medium text-secondary whitespace-nowrap">
                             {payment.paymentNumber}
                           </td>
                           <td className="px-4 py-3 text-secondary-600">
@@ -436,7 +436,7 @@ const Payments = () => {
                             {payment.referenceNumber && (
                               <Link
                                 to={`/invoices/${payment.referenceId}`}
-                                className="text-primary hover:underline"
+                                className="text-primary hover:underline whitespace-nowrap"
                               >
                                 {payment.referenceNumber}
                               </Link>
@@ -531,7 +531,7 @@ const Payments = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[720px]">
                 <thead className="bg-secondary-50 border-b border-secondary-200">
                   <tr>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-secondary-700">
@@ -569,7 +569,7 @@ const Payments = () => {
                       <td className="px-4 py-3">
                         <Link
                           to={`/invoices/${item.invoice._id}`}
-                          className="font-medium text-primary hover:underline"
+                          className="font-medium text-primary hover:underline whitespace-nowrap"
                         >
                           {item.invoice.invoiceNumber}
                         </Link>

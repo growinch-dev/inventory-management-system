@@ -151,7 +151,7 @@ const Reports = () => {
   };
 
   const formatCurrency = (value) => {
-    return `₹${(value || 0).toLocaleString('en-IN')}`;
+    return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
   };
 
   const renderSalesReport = () => {
@@ -219,21 +219,21 @@ const Reports = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={byStatus || []}
+                    data={(byStatus || []).map((s) => ({ ...s, label: String(s._id || '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) }))}
                     cx="50%"
-                    cy="50%"
+                    cy="45%"
                     innerRadius={50}
-                    outerRadius={90}
+                    outerRadius={85}
                     paddingAngle={2}
                     dataKey="count"
-                    nameKey="_id"
-                    label={({ _id, percent }) => `${_id} (${(percent * 100).toFixed(0)}%)`}
+                    nameKey="label"
                   >
                     {(byStatus || []).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value, name) => [`${value} invoice${value === 1 ? '' : 's'}`, name]} />
+                  <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

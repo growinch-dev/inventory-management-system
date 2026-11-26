@@ -286,7 +286,7 @@ const DeliveryChallans = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[720px]">
                 <thead className="bg-secondary-50 border-b border-secondary-200">
                   <tr>
                     <th className="text-left px-4 py-3 text-sm font-semibold text-secondary-700">
@@ -324,7 +324,7 @@ const DeliveryChallans = () => {
                       <td className="px-4 py-3">
                         <Link
                           to={`/delivery-challans/${challan._id}`}
-                          className="font-medium text-primary hover:underline"
+                          className="font-medium text-primary hover:underline whitespace-nowrap"
                         >
                           {challan.challanNumber}
                         </Link>
