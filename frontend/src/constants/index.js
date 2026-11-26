@@ -16,6 +16,33 @@ export const PRODUCT_CATEGORIES = [
   { value: 'Other', label: 'Other' },
 ];
 
+// Module access list (must match backend config/rolePermissions ALL_PERMISSIONS)
+export const MODULE_PERMISSIONS = [
+  { id: 'dashboard', label: 'Dashboard', group: 'Main' },
+  { id: 'products', label: 'Products', group: 'Masters' },
+  { id: 'raw-materials', label: 'Raw Materials', group: 'Masters' },
+  { id: 'categories', label: 'Categories', group: 'Masters' },
+  { id: 'customers', label: 'Customers', group: 'Masters' },
+  { id: 'vendors', label: 'Vendors', group: 'Masters' },
+  { id: 'warehouses', label: 'Warehouses', group: 'Masters' },
+  { id: 'purchase-orders', label: 'Purchases', group: 'Operations' },
+  { id: 'production', label: 'Production', group: 'Operations' },
+  { id: 'invoices', label: 'Sales', group: 'Operations' },
+  { id: 'delivery-challans', label: 'Delivery Challans', group: 'Operations' },
+  { id: 'pos', label: 'POS / Quick Sale', group: 'Operations' },
+  { id: 'movements', label: 'Stock Movements', group: 'Inventory' },
+  { id: 'transfers', label: 'Transfers', group: 'Inventory' },
+  { id: 'labels', label: 'Labels & QR', group: 'Inventory' },
+  { id: 'expenses', label: 'Expenses', group: 'Accounts' },
+  { id: 'payments', label: 'Payments', group: 'Accounts' },
+  { id: 'receipts', label: 'Receipts', group: 'Accounts' },
+  { id: 'investments', label: 'Investments', group: 'Accounts' },
+  { id: 'salaries', label: 'Salary Payments', group: 'Accounts' },
+  { id: 'reports', label: 'Reports', group: 'Reports & Tools' },
+  { id: 'users', label: 'Users', group: 'Reports & Tools' },
+  { id: 'settings', label: 'Settings', group: 'Reports & Tools' },
+];
+
 // Units of measurement
 export const UNITS = [
   { value: 'PCS', label: 'Pieces (PCS)' },

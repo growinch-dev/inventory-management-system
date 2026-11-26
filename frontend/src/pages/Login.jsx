@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Package, Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
+import { tenantAPI } from '../services/api';
 import { Button, Card } from '../components/ui';
+import growinchLogo from '../assets/growinch-logo.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -13,12 +15,26 @@ const Login = () => {
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { slug } = useParams();
   const { login, isLoading, error, clearError } = useAuthStore();
+  const [branding, setBranding] = useState(null);
+  const [slugInvalid, setSlugInvalid] = useState(false);
 
   // Animation on mount
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load per-customer branding when visiting /:slug
+  useEffect(() => {
+    if (!slug) return;
+    let active = true;
+    tenantAPI
+      .getBySlug(slug)
+      .then((res) => { if (active) setBranding(res.data.data); })
+      .catch(() => { if (active) setSlugInvalid(true); });
+    return () => { active = false; };
+  }, [slug]);
 
   // Get the redirect path from location state (if coming from protected route)
   const from = location.state?.from?.pathname || '/';
@@ -66,14 +82,22 @@ const Login = () => {
       <div className={`w-full max-w-md transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30 transition-transform hover:scale-105 duration-300">
-            <Package className="w-9 h-9 text-white" />
-          </div>
+          {branding?.logo ? (
+            <div className="w-16 h-16 rounded-2xl bg-white border border-secondary-100 flex items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden">
+              <img src={branding.logo} alt={branding.name} className="max-w-full max-h-full object-contain" />
+            </div>
+          ) : (
+            <img src={growinchLogo} alt="GrowInch" className="h-14 mx-auto mb-5 object-contain" />
+          )}
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-secondary">
-            Welcome Back
+            {branding ? branding.name : 'Welcome Back'}
           </h1>
           <p className="text-secondary-500 mt-2">
-            Sign in to Major Surgical Inventory
+            {branding
+              ? `Sign in to ${branding.name}`
+              : slugInvalid
+                ? 'Organization not found — signing in to your account'
+                : 'Sign in to your account'}
           </p>
         </div>
 
@@ -181,27 +205,11 @@ const Login = () => {
               Sign In
             </Button>
           </form>
-
-          {/* Divider */}
-          <div className="divider my-6">
-            <span className="text-secondary-400">or</span>
-          </div>
-
-          {/* Register Link */}
-          <p className="text-center text-sm text-secondary-500">
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              className="text-primary font-semibold hover:text-primary-dark transition-colors"
-            >
-              Create account
-            </Link>
-          </p>
         </Card>
 
         {/* Footer */}
         <p className="text-center text-xs text-secondary-400 mt-8">
-          Major Surgical Co. &copy; {new Date().getFullYear()}
+          GrowInch &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

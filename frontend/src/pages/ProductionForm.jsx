@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { PageHeader, Button, Input, Select, FormSection } from '../components/ui';
+import { productsAPI, productionAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const ProductionForm = () => {
@@ -34,22 +35,28 @@ const ProductionForm = () => {
 
   const fetchMasterData = async () => {
     try {
-      // TODO: Replace with actual API calls
-      setProducts([
-        { value: '1', label: '250ml Bottle' },
-        { value: '2', label: '500ml Bottle' },
-        { value: '3', label: '1L Bottle' },
-        { value: '4', label: '2L Bottle' },
-        { value: '5', label: '20L Can' },
+      const [productsRes, materialsRes] = await Promise.all([
+        productsAPI.getAll({ productType: 'finished_good', limit: 200 }),
+        productsAPI.getAll({ productType: 'raw_material', limit: 200 }),
       ]);
 
-      setRawMaterials([
-        { _id: '1', name: 'PET Preform 500ml', unit: 'Pieces', availableStock: 50000 },
-        { _id: '2', name: 'Bottle Cap', unit: 'Pieces', availableStock: 100000 },
-        { _id: '3', name: 'Label', unit: 'Pieces', availableStock: 80000 },
-        { _id: '4', name: 'Shrink Film', unit: 'KG', availableStock: 500 },
-        { _id: '5', name: 'Carton Box', unit: 'Pieces', availableStock: 2000 },
-      ]);
+      setProducts(
+        (productsRes.data.data || []).map((p) => ({
+          value: p._id,
+          label: p.bottleSize?.size
+            ? `${p.name} (${p.bottleSize.size}${p.bottleSize.unit})`
+            : p.name,
+        }))
+      );
+
+      setRawMaterials(
+        (materialsRes.data.data || []).map((m) => ({
+          _id: m._id,
+          name: m.name,
+          unit: m.unit || 'PCS',
+          availableStock: m.quantity ?? 0,
+        }))
+      );
     } catch (error) {
       toast.error('Failed to load master data');
     }
@@ -114,16 +121,32 @@ const ProductionForm = () => {
       return;
     }
 
+    if (!formData.productId) {
+      toast.error('Please select a product');
+      return;
+    }
+
+    const payload = {
+      productionDate: formData.productionDate,
+      shift: formData.shift,
+      productId: formData.productId,
+      batchNumber: formData.batchNumber,
+      plannedQuantity: formData.plannedQuantity,
+      producedQuantity: formData.producedQuantity,
+      rejectedQuantity: formData.rejectedQuantity,
+      remarks: formData.remarks,
+      materialsConsumed: formData.materialsConsumed.map((m) => ({
+        materialId: m.materialId,
+        quantity: m.quantity,
+        unit: m.unit,
+      })),
+    };
+
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // if (isEdit) {
-      //   await productionAPI.update(id, { ...formData, goodQuantity });
-      // } else {
-      //   await productionAPI.create({ ...formData, goodQuantity });
-      // }
+      await productionAPI.create(payload);
 
-      toast.success(isEdit ? 'Production updated successfully' : 'Production entry created successfully');
+      toast.success('Production entry created successfully');
       navigate('/production');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save production entry');
@@ -152,7 +175,7 @@ const ProductionForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Production Details */}
         <FormSection title="Production Details">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <Input
               label="Production Date"
               type="date"
@@ -193,7 +216,7 @@ const ProductionForm = () => {
 
         {/* Quantity Details */}
         <FormSection title="Production Quantity">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <Input
               label="Planned Quantity"
               type="number"
@@ -250,7 +273,7 @@ const ProductionForm = () => {
           ) : (
             <div className="space-y-3">
               {formData.materialsConsumed.map((material, index) => (
-                <div key={index} className="grid grid-cols-12 gap-3 items-end">
+                <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                   <div className="col-span-5">
                     <Select
                       label={index === 0 ? 'Raw Material' : ''}

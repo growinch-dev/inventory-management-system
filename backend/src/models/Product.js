@@ -25,38 +25,12 @@ const productSchema = new mongoose.Schema({
     maxlength: [2000, 'Description cannot exceed 2000 characters'],
   },
   category: {
+    // A category "value" (slug). The defaults are the mineral-water and
+    // raw-material categories; a tenant can add more via the Categories page,
+    // so this is a free string rather than a fixed enum.
     type: String,
     required: [true, 'Category is required'],
-    enum: [
-      // Finished Goods - Mineral Water
-      'mineral_water_250ml',
-      'mineral_water_500ml',
-      'mineral_water_1l',
-      'mineral_water_2l',
-      'mineral_water_20l',
-      // Raw Materials
-      'raw_material_bottles',
-      'raw_material_caps',
-      'raw_material_labels',
-      'raw_material_packaging',
-      'raw_material_chemicals',
-      'raw_material_filters',
-      // Legacy categories (for backward compatibility)
-      'Autoclaves & Sterilizers',
-      'Hospital Beds',
-      'Hospital Furniture',
-      'Orthopedic Instruments',
-      'Diagnostic Equipment',
-      'Rehabilitation Aids',
-      'Surgical Instruments',
-      'Laboratory Equipment',
-      'Medical Consumables',
-      'Patient Monitoring',
-      'Emergency Equipment',
-      'Dental Equipment',
-      'Physiotherapy Equipment',
-      'Other',
-    ],
+    trim: true,
   },
   // Product Type (for manufacturing)
   productType: {

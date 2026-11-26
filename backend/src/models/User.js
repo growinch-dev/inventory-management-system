@@ -28,9 +28,13 @@ const userSchema = new mongoose.Schema({
     select: false,
   },
   role: {
+    // Built-in: super_admin, admin, manager, staff. Tenants may also define
+    // custom roles (see the Role model), whose key is stored here, so this is
+    // a free string rather than a fixed enum.
     type: String,
-    enum: ['super_admin', 'admin', 'manager', 'staff'],
     default: 'staff',
+    lowercase: true,
+    trim: true,
   },
   permissions: {
     type: [String],

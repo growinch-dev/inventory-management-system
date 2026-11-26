@@ -70,7 +70,7 @@ const emailTemplates = {
           </a>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -113,7 +113,7 @@ const emailTemplates = {
           <p style="color: #666;">Please take action on this batch before it expires.</p>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -152,7 +152,7 @@ const emailTemplates = {
           </p>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -181,7 +181,7 @@ const emailTemplates = {
           </a>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -227,7 +227,7 @@ const emailTemplates = {
           </a>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -273,7 +273,7 @@ const emailTemplates = {
           </a>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -299,7 +299,7 @@ const emailTemplates = {
           </a>
         </div>
         <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-          Major Surgical Co. - Inventory Management System
+          GrowInch - Inventory Management System
         </div>
       </div>
     `,
@@ -317,7 +317,7 @@ const sendEmail = async (to, template, data) => {
     }
 
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"Inventory System" <noreply@majorsurgical.com>',
+      from: process.env.SMTP_FROM || '"Inventory System" <noreply@growinch.com>',
       to,
       subject: emailContent.subject,
       html: emailContent.html,

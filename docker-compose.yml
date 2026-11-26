@@ -1,0 +1,34 @@
+# ============================================================================
+#  GrowInch Inventory — local / on-premise stack
+#  Runs the app + its own MongoDB. For a customer machine:
+#     1. Install Docker Desktop
+#     2. Put a JWT_SECRET in a `.env` file next to this one (see .env.example)
+#     3. Run:  docker compose up -d
+#     4. Open: http://localhost:5001   (or http://<this-PC-LAN-IP>:5001)
+# ============================================================================
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    # DB is reachable by the app over the internal network; no host port needed.
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      NODE_ENV: production
+      SERVE_CLIENT: "true"
+      CORS_ORIGIN: "*"
+      MONGODB_URI: mongodb://mongo:27017/growinch-inventory
+      JWT_SECRET: ${JWT_SECRET:-change_me_to_a_long_random_string}
+      JWT_EXPIRE: 7d
+
+volumes:
+  mongo_data:

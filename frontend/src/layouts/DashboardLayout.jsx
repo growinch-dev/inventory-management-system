@@ -24,11 +24,14 @@ import {
   ClipboardList,
   Zap,
   IndianRupee,
+  TrendingUp,
+  Wallet,
   FolderTree,
   UserCog,
   Building2,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import growinchLogo from '../assets/growinch-logo.png';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui';
 import NotificationCenter from '../components/NotificationCenter';
@@ -80,6 +83,8 @@ const navigationGroups = [
       { name: 'Expenses', href: '/expenses', icon: FileText },
       { name: 'Payments', href: '/payments', icon: IndianRupee },
       { name: 'Receipts', href: '/receipts', icon: IndianRupee },
+      { name: 'Investments', href: '/investments', icon: TrendingUp },
+      { name: 'Salary Payments', href: '/salaries', icon: Wallet },
     ],
   },
   {
@@ -91,6 +96,13 @@ const navigationGroups = [
       { name: 'Settings', href: '/settings', icon: Settings },
     ],
   },
+  {
+    id: 'platform',
+    label: 'Platform',
+    items: [
+      { name: 'Organizations', href: '/admin/organizations', icon: Building2, superAdminOnly: true },
+    ],
+  },
 ];
 
 const DashboardLayout = () => {
@@ -100,7 +112,7 @@ const DashboardLayout = () => {
   const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, tenant, logout } = useAuthStore();
   const { t } = useLanguage();
 
   // Close user menu when clicking outside
@@ -173,6 +185,8 @@ const DashboardLayout = () => {
       '/expenses': 'expenses',
       '/payments': 'payments',
       '/receipts': 'receipts',
+      '/investments': 'investments',
+      '/salaries': 'salaries',
       '/reports': 'reports',
       '/users': 'users',
       '/settings': 'settings',
@@ -188,7 +202,9 @@ const DashboardLayout = () => {
   // Filter navigation groups based on permissions
   const filteredNavigationGroups = navigationGroups.map((group) => ({
     ...group,
-    items: group.items.filter((item) => hasPermission(item.href)),
+    items: group.items.filter((item) =>
+      item.superAdminOnly ? user?.role === 'super_admin' : hasPermission(item.href)
+    ),
   })).filter((group) => group.items.length > 0); // Remove empty groups
 
   return (
@@ -211,11 +227,24 @@ const DashboardLayout = () => {
         aria-label="Main navigation"
       >
         <div className="flex items-center justify-between h-16 px-5 border-b border-secondary-100">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center shadow-sm shadow-primary/20 transition-transform group-hover:scale-105">
-              <Package className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-heading font-bold text-secondary">GrowInch</span>
+          <Link to="/" className="flex items-center gap-2.5 group min-w-0">
+            {tenant?.settings?.logo ? (
+              <>
+                <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-white border border-secondary-100 flex-shrink-0">
+                  <img src={tenant.settings.logo} alt={tenant.name || 'Company logo'} className="max-w-full max-h-full object-contain" />
+                </div>
+                <span className="font-heading font-bold text-secondary truncate">{tenant.name}</span>
+              </>
+            ) : tenant?.name ? (
+              <>
+                <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary-700 rounded-xl flex items-center justify-center shadow-sm shadow-primary/20 transition-transform group-hover:scale-105 flex-shrink-0">
+                  <Package className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-heading font-bold text-secondary truncate">{tenant.name}</span>
+              </>
+            ) : (
+              <img src={growinchLogo} alt="GrowInch" className="h-8 object-contain" />
+            )}
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}

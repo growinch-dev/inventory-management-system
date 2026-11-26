@@ -40,7 +40,7 @@ const Customers = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     name: '',
     email: '',
     phone: '',
@@ -50,7 +50,10 @@ const Customers = () => {
     state: '',
     pincode: '',
     notes: '',
-  });
+    referral: { name: '', phone: '', type: '', notes: '' },
+  };
+
+  const [formData, setFormData] = useState(emptyForm);
 
   useEffect(() => {
     fetchCustomers();
@@ -105,20 +108,16 @@ const Customers = () => {
         state: customer.state || '',
         pincode: customer.pincode || '',
         notes: customer.notes || '',
+        referral: {
+          name: customer.referral?.name || '',
+          phone: customer.referral?.phone || '',
+          type: customer.referral?.type || '',
+          notes: customer.referral?.notes || '',
+        },
       });
     } else {
       setEditingCustomer(null);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        gstNumber: '',
-        address: '',
-        city: '',
-        state: '',
-        pincode: '',
-        notes: '',
-      });
+      setFormData(emptyForm);
     }
     setShowModal(true);
     setActiveMenu(null);
@@ -294,6 +293,14 @@ const Customers = () => {
                       </span>
                     </div>
                   )}
+                  {customer.referral?.name && (
+                    <div className="flex items-center gap-2.5 text-secondary-600">
+                      <Users size={15} className="text-secondary-400 flex-shrink-0" />
+                      <span className="truncate" title={`Referred by ${customer.referral.name}`}>
+                        Referred by {customer.referral.name}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-secondary-100 flex items-center justify-between">
@@ -464,6 +471,64 @@ const Customers = () => {
                     className="input"
                     placeholder="110001"
                     maxLength={6}
+                  />
+                </div>
+
+                {/* Referral — who brought this customer */}
+                <div className="md:col-span-2 pt-2 mt-1 border-t border-secondary-100">
+                  <h3 className="text-sm font-semibold text-secondary mb-1">Referral Details</h3>
+                  <p className="text-xs text-secondary-400 mb-3">Who referred / brought this customer (optional)</p>
+                </div>
+
+                <div>
+                  <label htmlFor="referralName" className="label">Referred By (Name)</label>
+                  <input
+                    id="referralName"
+                    type="text"
+                    value={formData.referral.name}
+                    onChange={(e) => setFormData({ ...formData, referral: { ...formData.referral, name: e.target.value } })}
+                    className="input"
+                    placeholder="Name of the person who referred"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="referralPhone" className="label">Referrer Phone</label>
+                  <input
+                    id="referralPhone"
+                    type="tel"
+                    value={formData.referral.phone}
+                    onChange={(e) => setFormData({ ...formData, referral: { ...formData.referral, phone: e.target.value } })}
+                    className="input"
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="referralType" className="label">Referrer Type</label>
+                  <select
+                    id="referralType"
+                    value={formData.referral.type}
+                    onChange={(e) => setFormData({ ...formData, referral: { ...formData.referral, type: e.target.value } })}
+                    className="input"
+                  >
+                    <option value="">Select type</option>
+                    <option value="customer">Existing Customer</option>
+                    <option value="employee">Employee</option>
+                    <option value="agent">Agent / Dealer</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="referralNotes" className="label">Referral Note</label>
+                  <input
+                    id="referralNotes"
+                    type="text"
+                    value={formData.referral.notes}
+                    onChange={(e) => setFormData({ ...formData, referral: { ...formData.referral, notes: e.target.value } })}
+                    className="input"
+                    placeholder="e.g. commission promised, relation"
                   />
                 </div>
 

@@ -7,11 +7,15 @@ const {
   updateUser,
   deleteUser,
   updatePermissions,
+  getRolePermissions,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(protect);
+
+// Role-based default module access (static list)
+router.get('/role-permissions', getRolePermissions);
 
 router.route('/')
   .get(getUsers)

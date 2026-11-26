@@ -1,4 +1,21 @@
 const User = require('../models/User');
+const Role = require('../models/Role');
+const { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, defaultPermissionsForRole } = require('../config/rolePermissions');
+
+// Resolve a role's module access: the tenant's Role doc if it exists, else the built-in defaults.
+const permissionsForRole = async (tenant, role) => {
+  const roleDoc = await Role.findOne({ tenant, key: role });
+  return roleDoc ? roleDoc.permissions : defaultPermissionsForRole(role);
+};
+
+// Get role-based default module access (for the UI to prefill)
+// @route   GET /api/users/role-permissions
+exports.getRolePermissions = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: { all: ALL_PERMISSIONS, defaults: DEFAULT_ROLE_PERMISSIONS },
+  });
+};
 
 // Get all users
 exports.getUsers = async (req, res) => {
@@ -65,6 +82,11 @@ exports.createUser = async (req, res) => {
       tenant: req.user.tenant,
       invitedBy: req.user.id,
     };
+
+    // Apply the role's module access when none was explicitly chosen.
+    if (!Array.isArray(userData.permissions) || userData.permissions.length === 0) {
+      userData.permissions = await permissionsForRole(req.user.tenant, userData.role);
+    }
 
     // Prevent non-super_admin from creating super_admin
     if (userData.role === 'super_admin' && req.user.role !== 'super_admin') {

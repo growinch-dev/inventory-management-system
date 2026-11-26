@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -18,9 +20,23 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS
+// Enable CORS — FRONTEND_URL may be a comma-separated list of allowed origins.
+// In single-server mode (API serves the built client, local or online) the
+// browser makes same-origin requests, so CORS is not involved at all. Set
+// CORS_ORIGIN=* to allow any origin (useful for LAN access during setup).
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173,http://localhost:5175')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Same-origin / non-browser clients (curl, server-to-server) send no Origin.
+    if (!origin || process.env.CORS_ORIGIN === '*' || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
   credentials: true,
 }));
 
@@ -46,6 +62,12 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/production', require('./routes/production'));
+app.use('/api/tenant', require('./routes/tenant'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/roles', require('./routes/roles'));
+app.use('/api/investments', require('./routes/investments'));
+app.use('/api/salaries', require('./routes/salaries'));
 
 // Product batches sub-route
 const { productBatchRouter } = require('./routes/batches');
@@ -55,6 +77,18 @@ app.use('/api/products/:productId/batches', productBatchRouter);
 app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is running' });
 });
+
+// Serve the built React client (single-server deployment: local or online).
+// Enabled when SERVE_CLIENT=true or a build exists at ../frontend/dist.
+const clientDist = path.resolve(__dirname, '../../frontend/dist');
+if (process.env.SERVE_CLIENT === 'true' || fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback: serve index.html for any non-API GET so client-side routing works.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 // Error handler
 app.use(errorHandler);

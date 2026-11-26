@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Relative '/api' by default so the app works on localhost, a LAN IP, or any
+// domain with no rebuild. In dev, Vite proxies '/api' to the backend; in
+// production the Express server serves this build and the API from one origin.
+// Override with VITE_API_URL only when the API lives on a different host.
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -51,6 +55,56 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateDetails: (data) => api.put('/auth/updatedetails', data),
   updatePassword: (data) => api.put('/auth/updatepassword', data),
+};
+
+// Investments API (capital / owner contributions)
+export const investmentsAPI = {
+  getAll: (params) => api.get('/investments', { params }),
+  create: (data) => api.post('/investments', data),
+  delete: (id) => api.delete(`/investments/${id}`),
+};
+
+// Salary payments API
+export const salariesAPI = {
+  getAll: (params) => api.get('/salaries', { params }),
+  create: (data) => api.post('/salaries', data),
+  delete: (id) => api.delete(`/salaries/${id}`),
+};
+
+// Roles & module access API
+export const rolesAPI = {
+  getAll: () => api.get('/roles'),
+  create: (data) => api.post('/roles', data),
+  update: (id, data) => api.put(`/roles/${id}`, data),
+  delete: (id) => api.delete(`/roles/${id}`),
+};
+
+// Categories API
+export const categoriesAPI = {
+  getAll: (params) => api.get('/categories', { params }),
+  create: (data) => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  delete: (id) => api.delete(`/categories/${id}`),
+};
+
+// Tenant / Organization API
+export const tenantAPI = {
+  get: () => api.get('/tenant'),
+  update: (data) => api.put('/tenant', data),
+  getBySlug: (slug) => api.get(`/tenant/by-slug/${slug}`), // public branding
+};
+
+// Platform admin (GrowInch super admin) — customer onboarding
+export const adminAPI = {
+  getTenants: () => api.get('/admin/tenants'),
+  createTenant: (data) => api.post('/admin/tenants', data),
+};
+
+// Production API
+export const productionAPI = {
+  getAll: (params) => api.get('/production', { params }),
+  getOne: (id) => api.get(`/production/${id}`),
+  create: (data) => api.post('/production', data),
 };
 
 // Products API

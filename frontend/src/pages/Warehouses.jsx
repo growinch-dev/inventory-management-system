@@ -40,6 +40,19 @@ const warehouseTypes = [
   { value: 'quarantine', label: 'Quarantine', color: 'danger' },
 ];
 
+// Defined at module scope (NOT inside the component) so it keeps a stable
+// identity across renders — otherwise inputs inside it remount on every
+// keystroke and lose focus after one character.
+const FormSection = ({ icon: Icon, title, children }) => (
+  <div className="space-y-4">
+    <div className="flex items-center gap-2 pb-2 border-b border-secondary-100">
+      <Icon size={16} className="text-primary" />
+      <h3 className="text-sm font-semibold text-secondary">{title}</h3>
+    </div>
+    {children}
+  </div>
+);
+
 const Warehouses = () => {
   const { t } = useLanguage();
   const [warehouses, setWarehouses] = useState([]);
@@ -231,16 +244,6 @@ const Warehouses = () => {
     { divider: true },
     { label: 'Delete', icon: Trash2, onClick: () => handleDelete(warehouse._id), variant: 'danger', disabled: warehouse.isDefault },
   ];
-
-  const FormSection = ({ icon: Icon, title, children }) => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 pb-2 border-b border-secondary-100">
-        <Icon size={16} className="text-primary" />
-        <h3 className="text-sm font-semibold text-secondary">{title}</h3>
-      </div>
-      {children}
-    </div>
-  );
 
   // Grid view card
   const WarehouseCard = ({ warehouse }) => {

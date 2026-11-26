@@ -13,6 +13,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { invoicesAPI } from '../services/api';
+import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -26,6 +27,7 @@ const STATUS_CONFIG = {
 };
 
 const InvoiceDetail = () => {
+  const { tenant } = useAuthStore();
   const { id } = useParams();
   const navigate = useNavigate();
   const invoiceRef = useRef(null);
@@ -70,13 +72,15 @@ const InvoiceDetail = () => {
     // Header
     doc.setFontSize(20);
     doc.setTextColor(30, 41, 59);
-    doc.text('MAJOR SURGICAL CO.', 20, 25);
+    doc.text((tenant?.name || 'GrowInch').toUpperCase(), 20, 25);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text('4686, Nai Sarak, Delhi - 110006, India', 20, 32);
-    doc.text('GSTIN: 07AABCM1234A1Z5', 20, 37);
-    doc.text('Phone: +91-11-23456789', 20, 42);
+    const _a = tenant?.address || {};
+    const _compAddr = [_a.street, _a.city, _a.state, _a.pincode].filter(Boolean).join(', ');
+    if (_compAddr) doc.text(_compAddr, 20, 32);
+    if (tenant?.gstNumber) doc.text(`GSTIN: ${tenant.gstNumber}`, 20, 37);
+    if (tenant?.phone) doc.text(`Phone: ${tenant.phone}`, 20, 42);
 
     // Invoice Title
     doc.setFontSize(24);
@@ -206,7 +210,7 @@ const InvoiceDetail = () => {
     doc.setFontSize(9);
     doc.setTextColor(100);
     doc.text('This is a computer generated invoice.', 105, 280, { align: 'center' });
-    doc.text('For Major Surgical Co.', 160, 260);
+    doc.text(`For ${tenant?.name || 'GrowInch'}`, 160, 260);
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
     doc.text('Authorized Signatory', 160, 275);
@@ -305,11 +309,24 @@ const InvoiceDetail = () => {
       <div className="card p-8 print:shadow-none" ref={invoiceRef}>
         {/* Company Header */}
         <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-2xl font-bold text-secondary">MAJOR SURGICAL CO.</h2>
-            <p className="text-gray-600 mt-1">4686, Nai Sarak, Delhi - 110006, India</p>
-            <p className="text-gray-600">GSTIN: 07AABCM1234A1Z5</p>
-            <p className="text-gray-600">Phone: +91-11-23456789</p>
+          <div className="flex items-start gap-4">
+            {tenant?.settings?.logo && (
+              <img
+                src={tenant.settings.logo}
+                alt={tenant.name || 'Company logo'}
+                className="w-16 h-16 object-contain flex-shrink-0"
+              />
+            )}
+            <div>
+              <h2 className="text-2xl font-bold text-secondary uppercase">{tenant?.name || 'Your Company'}</h2>
+              {(() => {
+                const a = tenant?.address || {};
+                const line = [a.street, a.city, a.state, a.pincode].filter(Boolean).join(', ');
+                return line ? <p className="text-gray-600 mt-1">{line}</p> : null;
+              })()}
+              {tenant?.gstNumber && <p className="text-gray-600">GSTIN: {tenant.gstNumber}</p>}
+              {tenant?.phone && <p className="text-gray-600">Phone: {tenant.phone}</p>}
+            </div>
           </div>
           <div className="text-right">
             <h1 className="text-3xl font-bold text-primary">TAX INVOICE</h1>
@@ -426,7 +443,7 @@ const InvoiceDetail = () => {
         <div className="mt-12 pt-6 border-t border-gray-200 flex justify-between items-end">
           <p className="text-sm text-gray-400">This is a computer generated invoice.</p>
           <div className="text-right">
-            <p className="text-gray-600 mb-8">For Major Surgical Co.</p>
+            <p className="text-gray-600 mb-8">For {tenant?.name || 'GrowInch'}</p>
             <p className="font-semibold text-secondary">Authorized Signatory</p>
           </div>
         </div>

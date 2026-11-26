@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Plus, Calendar, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import { PageHeader, Button, Table, Badge, SearchFilter } from '../components/ui';
+import { productionAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const Production = () => {
   const navigate = useNavigate();
@@ -16,26 +18,28 @@ const Production = () => {
   const fetchProductions = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // const response = await productionAPI.getAll();
-      // setProductions(response.data.data);
-
-      // Mock data for now
-      setProductions([
-        {
-          _id: '1',
-          productionDate: '2026-11-22',
-          product: { name: '500ml Bottle', size: '500ml' },
-          plannedQuantity: 10000,
-          producedQuantity: 9850,
-          rejectedQuantity: 150,
-          goodQuantity: 9700,
-          shift: 'Day',
-          status: 'completed',
+      const response = await productionAPI.getAll({ limit: 100 });
+      const data = (response.data.data || []).map((p) => ({
+        _id: p._id,
+        productionDate: p.productionDate,
+        product: {
+          name: p.product?.name || '—',
+          size: p.product?.bottleSize?.size
+            ? `${p.product.bottleSize.size}${p.product.bottleSize.unit}`
+            : (p.batchNumber || ''),
         },
-      ]);
+        plannedQuantity: p.plannedQuantity || 0,
+        producedQuantity: p.producedQuantity || 0,
+        rejectedQuantity: p.rejectedQuantity || 0,
+        goodQuantity: p.goodQuantity || 0,
+        shift: p.shift,
+        status: p.status,
+      }));
+      setProductions(data);
     } catch (error) {
       console.error('Error fetching productions:', error);
+      toast.error('Failed to load production entries');
+      setProductions([]);
     } finally {
       setLoading(false);
     }
@@ -44,10 +48,16 @@ const Production = () => {
   const getStatusBadge = (status) => {
     const variants = {
       completed: 'success',
+      in_progress: 'warning',
       inProgress: 'warning',
+      planned: 'info',
       cancelled: 'danger',
     };
-    return <Badge variant={variants[status] || 'gray'}>{status}</Badge>;
+    const labels = {
+      in_progress: 'In Progress',
+      inProgress: 'In Progress',
+    };
+    return <Badge variant={variants[status] || 'gray'}>{labels[status] || status}</Badge>;
   };
 
   const columns = [

@@ -15,12 +15,17 @@ exports.getProducts = async (req, res, next) => {
       sortBy = 'createdAt',
       order = 'desc',
       lowStock,
+      productType,
     } = req.query;
 
     const query = { isActive: true, tenant: req.user.tenant };
 
     if (category) {
       query.category = category;
+    }
+
+    if (productType) {
+      query.productType = productType;
     }
 
     if (search) {

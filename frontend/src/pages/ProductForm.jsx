@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Save, Printer } from 'lucide-react';
-import { productsAPI, warehousesAPI } from '../services/api';
+import { productsAPI, warehousesAPI, categoriesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import {
   PageHeader,
@@ -22,6 +22,8 @@ const ProductForm = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
+  // Managed categories from the Categories page, with the built-in list as fallback.
+  const [categoryOptions, setCategoryOptions] = useState(PRODUCT_CATEGORIES);
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -49,6 +51,7 @@ const ProductForm = () => {
 
   useEffect(() => {
     fetchWarehouses();
+    fetchCategories();
     if (isEdit) {
       fetchProduct();
     }
@@ -60,6 +63,18 @@ const ProductForm = () => {
       setWarehouses(response.data.data || []);
     } catch (error) {
       console.error('Failed to load warehouses');
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await categoriesAPI.getAll();
+      const cats = (response.data.data || [])
+        .filter((c) => c.isActive !== false)
+        .map((c) => ({ value: c.value, label: c.name }));
+      if (cats.length) setCategoryOptions(cats);
+    } catch (error) {
+      // Keep the built-in PRODUCT_CATEGORIES fallback.
     }
   };
 
@@ -166,7 +181,7 @@ const ProductForm = () => {
                 label="Category"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                options={PRODUCT_CATEGORIES}
+                options={categoryOptions}
                 placeholder="Select Category"
                 required
               />

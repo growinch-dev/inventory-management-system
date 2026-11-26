@@ -29,6 +29,17 @@ import {
 } from '../components/ui';
 import { useLanguage } from '../context/LanguageContext';
 
+// Module scope (NOT inside the component) so inputs inside it keep focus while typing.
+const FormSection = ({ icon: Icon, title, children }) => (
+  <div className="space-y-4">
+    <div className="flex items-center gap-2 pb-2 border-b border-secondary-100">
+      <Icon size={16} className="text-primary" />
+      <h3 className="text-sm font-semibold text-secondary">{title}</h3>
+    </div>
+    {children}
+  </div>
+);
+
 const Suppliers = () => {
   const { t } = useLanguage();
   const [suppliers, setSuppliers] = useState([]);
@@ -186,16 +197,6 @@ const Suppliers = () => {
     { label: 'Delete', icon: Trash2, onClick: () => handleDelete(supplier._id), variant: 'danger' },
   ];
 
-  // Form section component for visual grouping
-  const FormSection = ({ icon: Icon, title, children }) => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 pb-2 border-b border-secondary-100">
-        <Icon size={16} className="text-primary" />
-        <h3 className="text-sm font-semibold text-secondary">{title}</h3>
-      </div>
-      {children}
-    </div>
-  );
 
   return (
     <div className="space-y-6 animate-fade-in">

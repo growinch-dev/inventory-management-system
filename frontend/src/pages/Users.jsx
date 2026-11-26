@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, Shield, Eye, EyeOff } from 'lucide-react';
-import api from '../services/api';
+import api, { rolesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -28,9 +28,25 @@ const availablePermissions = [
   { id: 'expenses', label: 'Expenses', group: 'Accounts' },
   { id: 'payments', label: 'Payments', group: 'Accounts' },
   { id: 'receipts', label: 'Receipts', group: 'Accounts' },
+  { id: 'investments', label: 'Investments', group: 'Accounts' },
+  { id: 'salaries', label: 'Salary Payments', group: 'Accounts' },
   { id: 'reports', label: 'Reports', group: 'Reports & Tools' },
   { id: 'settings', label: 'Settings', group: 'Reports & Tools' },
 ];
+
+// Per-role default module access (mirrors backend config/rolePermissions.js).
+const ROLE_DEFAULT_PERMISSIONS = {
+  admin: availablePermissions.map((p) => p.id),
+  manager: [
+    'dashboard', 'products', 'raw-materials', 'categories', 'customers', 'vendors',
+    'warehouses', 'purchase-orders', 'production', 'invoices', 'delivery-challans',
+    'pos', 'movements', 'transfers', 'labels', 'expenses', 'payments', 'receipts', 'reports',
+  ],
+  staff: [
+    'dashboard', 'products', 'raw-materials', 'production', 'invoices',
+    'delivery-challans', 'pos', 'movements',
+  ],
+};
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -49,15 +65,31 @@ const Users = () => {
     isActive: true,
   });
 
-  const roleOptions = [
+  const [roleOptions, setRoleOptions] = useState([
     { value: 'staff', label: 'Staff' },
     { value: 'manager', label: 'Manager' },
     { value: 'admin', label: 'Admin' },
-  ];
+  ]);
+  // Permissions per role key, so "Apply role defaults" works for custom roles too.
+  const [rolePerms, setRolePerms] = useState({});
 
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const res = await rolesAPI.getAll();
+      const list = res.data.data || [];
+      if (list.length) {
+        setRoleOptions(list.map((r) => ({ value: r.key, label: r.name })));
+        setRolePerms(Object.fromEntries(list.map((r) => [r.key, r.permissions || []])));
+      }
+    } catch (error) {
+      // Keep the built-in role options as fallback.
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -441,9 +473,20 @@ const Users = () => {
         size="xl"
       >
         <div className="space-y-6">
-          <p className="text-sm text-secondary-600">
-            Select which menu items this user can access. Users will only see the selected menu items in their navigation.
-          </p>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <p className="text-sm text-secondary-600 flex-1 min-w-[12rem]">
+              Select which menu items this user can access. Users will only see the selected menu items in their navigation.
+            </p>
+            {editingUser?.role && (rolePerms[editingUser.role] || ROLE_DEFAULT_PERMISSIONS[editingUser.role]) && (
+              <button
+                type="button"
+                onClick={() => setSelectedPermissions(rolePerms[editingUser.role] || ROLE_DEFAULT_PERMISSIONS[editingUser.role])}
+                className="text-xs font-medium text-primary-600 hover:text-primary-800 border border-primary-200 rounded-lg px-3 py-1.5 whitespace-nowrap"
+              >
+                Apply {editingUser.role} defaults
+              </button>
+            )}
+          </div>
 
           {Object.entries(permissionGroups).map(([group, permissions]) => (
             <div key={group} className="border border-secondary-200 rounded-lg p-4">

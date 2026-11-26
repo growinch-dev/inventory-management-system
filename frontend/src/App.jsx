@@ -27,6 +27,9 @@ import Movements from './pages/Movements';
 import LabelGenerator from './pages/LabelGenerator';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import Organizations from './pages/Organizations';
+import Investments from './pages/Investments';
+import Salaries from './pages/Salaries';
 import PurchaseOrders from './pages/PurchaseOrders';
 import PurchaseOrderForm from './pages/PurchaseOrderForm';
 import PurchaseOrderReceive from './pages/PurchaseOrderReceive';
@@ -215,6 +218,10 @@ function App() {
           {/* Receipts */}
           <Route path="receipts" element={<Receipts />} />
 
+          {/* Investments & Salary Payments */}
+          <Route path="investments" element={<Investments />} />
+          <Route path="salaries" element={<Salaries />} />
+
           {/* Subscription & Billing */}
           <Route path="pricing" element={<Pricing />} />
           <Route path="billing" element={<Billing />} />
@@ -222,7 +229,20 @@ function App() {
 
           {/* Limit Enforcement Demo */}
           <Route path="limit-demo" element={<LimitDemo />} />
+
+          {/* Platform admin (super admin) — customer onboarding */}
+          <Route path="admin/organizations" element={<Organizations />} />
         </Route>
+
+        {/* Per-customer branded login: inventory.growinch.com/<slug> */}
+        <Route
+          path="/:slug"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
 
         {/* Catch all - redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />

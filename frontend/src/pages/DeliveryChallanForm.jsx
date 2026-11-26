@@ -352,7 +352,7 @@ const DeliveryChallanForm = () => {
             <Input
               value={formData.purpose}
               onChange={(e) => handleChange('purpose', e.target.value)}
-              placeholder="e.g., Demo for surgical procedure, Approval basis supply..."
+              placeholder="e.g., Trial supply, Approval basis supply, Sample..."
             />
           </div>
         </Card>
@@ -395,7 +395,7 @@ const DeliveryChallanForm = () => {
               <Input
                 value={formData.consignee.name}
                 onChange={(e) => handleNestedChange('consignee', 'name', e.target.value)}
-                placeholder="Company/Hospital name"
+                placeholder="Company name"
                 required
               />
             </div>

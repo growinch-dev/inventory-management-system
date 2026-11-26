@@ -12,15 +12,17 @@ import {
   Camera,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
-import { authAPI } from '../services/api';
+import { authAPI, tenantAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
+import RolesManager from '../components/RolesManager';
 
 const Settings = () => {
   const { t } = useLanguage();
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, tenant, setTenant } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
   const [saving, setSaving] = useState(false);
+  const [logo, setLogo] = useState('');
 
   // Profile form
   const [profileData, setProfileData] = useState({
@@ -43,16 +45,16 @@ const Settings = () => {
 
   // Company settings
   const [companyData, setCompanyData] = useState({
-    companyName: 'Major Surgical Co.',
-    address: '4686, Nai Sarak, Delhi - 110006, India',
-    phone: '+91-11-23456789',
-    email: 'info@majorsurgical.com',
-    gstNumber: '07AABCM1234A1Z5',
-    panNumber: 'AABCM1234A',
-    bankName: 'State Bank of India',
-    accountNumber: '1234567890',
-    ifscCode: 'SBIN0001234',
-    branch: 'Chandni Chowk, Delhi',
+    companyName: '',
+    address: '',
+    phone: '',
+    email: '',
+    gstNumber: '',
+    panNumber: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    branch: '',
   });
 
   // Notification settings
@@ -74,6 +76,40 @@ const Settings = () => {
       });
     }
   }, [user]);
+
+  // Load company/organization details from the tenant
+  useEffect(() => {
+    if (tenant) {
+      const a = tenant.address || {};
+      setCompanyData((prev) => ({
+        ...prev,
+        companyName: tenant.name || '',
+        email: tenant.email || '',
+        phone: tenant.phone || '',
+        gstNumber: tenant.gstNumber || '',
+        panNumber: tenant.panNumber || '',
+        address: [a.street, a.city, a.state, a.pincode].filter(Boolean).join(', '),
+      }));
+      setLogo(tenant.settings?.logo || '');
+    }
+  }, [tenant]);
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (PNG, JPG, SVG).');
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      toast.error('Logo must be under 500 KB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setLogo(reader.result);
+    reader.onerror = () => toast.error('Could not read the image file.');
+    reader.readAsDataURL(file);
+  };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -121,11 +157,20 @@ const Settings = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      // API call would go here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await tenantAPI.update({
+        name: companyData.companyName,
+        email: companyData.email,
+        phone: companyData.phone,
+        gstNumber: companyData.gstNumber,
+        panNumber: companyData.panNumber,
+        settings: {
+          logo: logo || '',
+        },
+      });
+      setTenant(response.data.data);
       toast.success('Company settings updated successfully');
     } catch (error) {
-      toast.error('Failed to update company settings');
+      toast.error(error.response?.data?.message || 'Failed to update company settings');
     } finally {
       setSaving(false);
     }
@@ -145,10 +190,13 @@ const Settings = () => {
     }
   };
 
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.isOwner;
+
   const tabs = [
     { id: 'profile', label: t('settings.profile'), icon: User },
     { id: 'security', label: t('settings.security'), icon: Shield },
     { id: 'company', label: t('settings.company'), icon: Building2 },
+    ...(isAdmin ? [{ id: 'roles', label: 'Roles & Access', icon: Shield }] : []),
     { id: 'notifications', label: t('settings.notifications'), icon: Bell },
   ];
 
@@ -368,6 +416,41 @@ const Settings = () => {
               <h2 className="text-lg font-semibold text-secondary mb-6">Company Information</h2>
 
               <form onSubmit={handleCompanySubmit} className="space-y-6">
+                {/* Company Logo */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 mb-3">COMPANY LOGO</h3>
+                  <div className="flex items-center gap-5">
+                    <div className="w-24 h-24 rounded-xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {logo ? (
+                        <img src={logo} alt="Company logo" className="max-w-full max-h-full object-contain" />
+                      ) : (
+                        <Building2 size={28} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="btn-secondary cursor-pointer inline-flex items-center">
+                          <Camera size={16} className="mr-2" />
+                          {logo ? 'Change Logo' : 'Upload Logo'}
+                          <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                        </label>
+                        {logo && (
+                          <button
+                            type="button"
+                            onClick={() => setLogo('')}
+                            className="text-sm text-danger hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG or SVG, under 500&nbsp;KB. Shown in the sidebar and on invoices.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Basic Info */}
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 mb-3">BASIC INFORMATION</h3>
@@ -516,6 +599,15 @@ const Settings = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Roles & Access Tab */}
+          {activeTab === 'roles' && isAdmin && (
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-secondary mb-1">Roles & Module Access</h2>
+              <p className="text-sm text-gray-500 mb-6">Control which modules each role can access, and create custom roles.</p>
+              <RolesManager />
             </div>
           )}
 

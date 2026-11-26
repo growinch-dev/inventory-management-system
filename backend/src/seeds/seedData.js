@@ -26,28 +26,28 @@ const connectDB = async () => {
 const users = [
   {
     name: 'Admin',
-    email: 'admin@majorsurgical.com',
+    email: 'admin@growinch.com',
     password: 'Admin@123',
     role: 'admin',
     isActive: true,
   },
   {
     name: 'Rajesh Kumar',
-    email: 'rajesh@majorsurgical.com',
+    email: 'rajesh@growinch.com',
     password: 'Manager@123',
     role: 'manager',
     isActive: true,
   },
   {
     name: 'Priya Sharma',
-    email: 'priya@majorsurgical.com',
+    email: 'priya@growinch.com',
     password: 'Staff@123',
     role: 'staff',
     isActive: true,
   },
   {
     name: 'Amit Patel',
-    email: 'amit@majorsurgical.com',
+    email: 'amit@growinch.com',
     password: 'Staff@123',
     role: 'staff',
     isActive: true,
@@ -864,7 +864,7 @@ const seedData = async () => {
         contactPerson: {
           name: 'Vikram Singh',
           phone: '+91-22-45678901',
-          email: 'mumbai@majorsurgical.com',
+          email: 'mumbai@growinch.com',
         },
         capacity: { maxItems: 15000, currentItems: 0 },
         zones: [
@@ -900,7 +900,7 @@ const seedData = async () => {
         contactPerson: {
           name: 'Rahul Sharma',
           phone: '+91-11-23456789',
-          email: 'delhi@majorsurgical.com',
+          email: 'delhi@growinch.com',
         },
         capacity: { maxItems: 8000, currentItems: 0 },
         zones: [
@@ -933,7 +933,7 @@ const seedData = async () => {
         contactPerson: {
           name: 'Suresh Reddy',
           phone: '+91-80-45678901',
-          email: 'bangalore@majorsurgical.com',
+          email: 'bangalore@growinch.com',
         },
         capacity: { maxItems: 5000, currentItems: 0 },
         zones: [
@@ -965,7 +965,7 @@ const seedData = async () => {
         contactPerson: {
           name: 'Kumar Krishnan',
           phone: '+91-44-23456789',
-          email: 'chennai@majorsurgical.com',
+          email: 'chennai@growinch.com',
         },
         capacity: { maxItems: 3000, currentItems: 0 },
         zones: [
@@ -1365,9 +1365,9 @@ const seedData = async () => {
     console.log('\nWarehouses:');
     createdWarehouses.forEach(w => console.log(`  - ${w.code}: ${w.name} (${w.type})`));
     console.log('\nLogin credentials:');
-    console.log('- Admin: admin@majorsurgical.com / Admin@123');
-    console.log('- Manager: rajesh@majorsurgical.com / Manager@123');
-    console.log('- Staff: priya@majorsurgical.com / Staff@123');
+    console.log('- Admin: admin@growinch.com / Admin@123');
+    console.log('- Manager: rajesh@growinch.com / Manager@123');
+    console.log('- Staff: priya@growinch.com / Staff@123');
     console.log('========================================\n');
 
     process.exit(0);

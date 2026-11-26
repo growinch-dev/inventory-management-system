@@ -117,7 +117,7 @@ const Register = () => {
             Create Account
           </h1>
           <p className="text-secondary-500 mt-2">
-            Get started with Major Surgical Inventory
+            Get started with GrowInch Inventory
           </p>
         </div>
 
@@ -335,7 +335,7 @@ const Register = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-secondary-400 mt-8">
-          Major Surgical Co. &copy; {new Date().getFullYear()}
+          GrowInch &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>
